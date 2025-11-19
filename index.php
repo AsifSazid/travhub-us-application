@@ -64,7 +64,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UK Visa Applications Dashboard</title>
+    <title>US Visa Applications Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -130,9 +130,9 @@ try {
                 <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-3">
                     <i class="fas fa-passport text-white text-xl"></i>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-800">UK Visa Applications</h1>
+                <h1 class="text-3xl font-bold text-gray-800">US Visa/DS-160 Applications</h1>
             </div>
-            <p class="text-gray-600 max-w-2xl mx-auto">Manage your saved UK visa applications. Continue where you left off or start a new application.</p>
+            <p class="text-gray-600 max-w-2xl mx-auto">Manage your saved US visa applications. Continue where you left off or start a new application.</p>
         </header>
 
         <!-- Dashboard Stats -->
@@ -179,7 +179,7 @@ try {
             <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center">
                 <div>
                     <h2 class="text-xl font-bold text-gray-800">Saved Applications</h2>
-                    <p class="text-gray-600 text-sm">Your UK visa applications saved in this browser</p>
+                    <p class="text-gray-600 text-sm">Your US visa applications saved in this browser</p>
                 </div>
                 <div class="mt-4 md:mt-0 flex space-x-3">
                     <button id="refresh-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-300 flex items-center">
@@ -200,7 +200,7 @@ try {
                     <div class="max-w-md mx-auto">
                         <i class="fas fa-folder-open text-gray-300 text-6xl mb-6"></i>
                         <h3 class="text-xl font-medium text-gray-600 mb-2">No applications found</h3>
-                        <p class="text-gray-500 mb-6">You haven't created any UK visa applications yet.</p>
+                        <p class="text-gray-500 mb-6">You haven't created any US visa applications yet.</p>
                         <button id="create-first-app" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition duration-300">
                             Create Your First Application
                         </button>
@@ -212,7 +212,7 @@ try {
         <!-- Footer -->
         <footer class="mt-12 text-center text-gray-500 text-sm">
             <p>© 2025 TravHub Global Limited. All rights reserved.</p>
-            <p class="mt-2">This is a demonstration dashboard only. For official visa applications, visit the <a href="#" class="text-blue-600 hover:underline">GOV.UK website</a>.</p>
+            <p class="mt-2">This is a demonstration dashboard only. For official visa applications, visit the <a href="#" class="text-blue-600 hover:underline">GOV.US website</a>.</p>
         </footer>
     </div>
 
@@ -276,7 +276,7 @@ try {
             // Merge with localStorage applications
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key.startsWith("ukVisaApplication-")) {
+                if (key.startsWith("usVisaApplication-")) {
                     try {
                         const appData = JSON.parse(localStorage.getItem(key));
                         if (appData) {
@@ -576,7 +576,7 @@ try {
             }
 
             // Remove from localStorage
-            localStorage.removeItem('ukVisaApplication');
+            localStorage.removeItem('usVisaApplication');
 
             // Show success message
             alert(`Application ${pnr} has been deleted.`);

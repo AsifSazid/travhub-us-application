@@ -852,6 +852,16 @@ if ($pnr) {
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                        onchange="updateApplicantData('travelInfo', 'ti_stay_length', this.value)">
                             </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Number + Select Option (Day, Month, Year)</label>
+                                <select name="ti_length_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'ti_length_type', this.value)">
+                                    <option value="">Select</option>
+                                    <option value="Days" ${(ti.ti_length_type === 'Days') ? 'selected' : ''}>Days</option>
+                                    <option value="Months" ${(ti.ti_length_type === 'Months') ? 'selected' : ''}>Months</option>
+                                    <option value="Years" ${(ti.ti_length_type === 'Years') ? 'selected' : ''}>Years</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -1036,6 +1046,514 @@ if ($pnr) {
             `;
         }
 
+        // Travel Companion Information Step (Based on Excel TCI section)
+        function generateTravelCompanionStep(applicant) {
+            const tci = applicant.travelInfo || {};
+            
+            return `
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Are you traveling with anyone?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="tci_have_anyone" value="1" 
+                                       ${tci.tci_have_anyone ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('travel-companion', this.checked); updateApplicantData('travelInfo', 'tci_have_anyone', this.checked)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="tci_have_anyone" value="0" 
+                                       ${!tci.tci_have_anyone ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('travel-companion', this.checked); updateApplicantData('travelInfo', 'tci_have_anyone', this.checked)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="travel-companion" class="conditional-block ${tci.tci_have_anyone ? 'active' : ''}">
+                        <div class="space-y-6">
+                            <h4 class="text-lg font-medium text-gray-800">Travel Companion Details</h4>
+                            
+                            <!-- Companion Details (Multiple) -->
+                            <div class="dynamic-field-group">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Surname</label>
+                                        <input type="text" name="tci_surname" 
+                                               value="${tci.tci_surname || ''}" 
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                               onchange="updateApplicantData('travelInfo', 'tci_surname', this.value)">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Given name</label>
+                                        <input type="text" name="tci_given_name" 
+                                               value="${tci.tci_given_name || ''}" 
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                               onchange="updateApplicantData('travelInfo', 'tci_given_name', this.value)">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-gray-700 mb-2">Relationship to You</label>
+                                        <input type="text" name="tci_relationship" 
+                                               value="${tci.tci_relationship || ''}" 
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                               onchange="updateApplicantData('travelInfo', 'tci_relationship', this.value)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 mb-2">Are you traveling as part of a group?</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="tci_have_group" value="1" 
+                                               ${tci.tci_have_group ? 'checked' : ''}
+                                               onchange="toggleConditionalBlock('group-travel', this.checked); updateApplicantData('travelInfo', 'tci_have_group', this.checked)">
+                                        <span class="ml-2">Yes</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="tci_have_group" value="0" 
+                                               ${!tci.tci_have_group ? 'checked' : ''}
+                                               onchange="toggleConditionalBlock('group-travel', this.checked); updateApplicantData('travelInfo', 'tci_have_group', this.checked)">
+                                        <span class="ml-2">No</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="group-travel" class="conditional-block ${tci.tci_have_group ? 'active' : ''}">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Group Name</label>
+                                    <input type="text" name="tci_group_name" 
+                                           value="${tci.tci_group_name || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('travelInfo', 'tci_group_name', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Previous U.S. Travel Step (Based on Excel PUST section)
+        function generatePreviousTravelStep(applicant) {
+            const pust = applicant.travelHistory || {};
+            
+            return `
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Have you ever issued a visa to the USA?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_ever_issued" value="1" 
+                                       ${pust.pust_have_ever_issued ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('previous-visa', this.checked); updateApplicantData('travelHistory', 'pust_have_ever_issued', this.checked)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_ever_issued" value="0" 
+                                       ${!pust.pust_have_ever_issued ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('previous-visa', this.checked); updateApplicantData('travelHistory', 'pust_have_ever_issued', this.checked)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="previous-visa" class="conditional-block ${pust.pust_have_ever_issued ? 'active' : ''}">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Date Last Issued Visa</label>
+                                    <input type="date" name="pust_last_issued_visa_date" 
+                                           value="${pust.pust_last_issued_visa_date || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('travelHistory', 'pust_last_issued_visa_date', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Visa Number</label>
+                                    <input type="text" name="pust_visa_no" 
+                                           value="${pust.pust_visa_no || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('travelHistory', 'pust_visa_no', this.value)">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="pust_remember_visa_no" 
+                                           ${pust.pust_remember_visa_no ? 'checked' : ''}
+                                           onchange="updateApplicantData('travelHistory', 'pust_remember_visa_no', this.checked)">
+                                    <span class="ml-2">Do not know visa number</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Are you applying for the same visa type?</label>
+                            <div class="flex space-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="pust_have_applied_same_visa" value="1" 
+                                           ${pust.pust_have_applied_same_visa ? 'checked' : ''}
+                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_visa', this.checked)">
+                                    <span class="ml-2">Yes</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="pust_have_applied_same_visa" value="0" 
+                                           ${!pust.pust_have_applied_same_visa ? 'checked' : ''}
+                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_visa', this.checked)">
+                                    <span class="ml-2">No</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Are you applying in the same country?</label>
+                            <div class="flex space-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="pust_have_applied_same_country" value="1" 
+                                           ${pust.pust_have_applied_same_country ? 'checked' : ''}
+                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_country', this.checked)">
+                                    <span class="ml-2">Yes</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="pust_have_applied_same_country" value="0" 
+                                           ${!pust.pust_have_applied_same_country ? 'checked' : ''}
+                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_country', this.checked)">
+                                    <span class="ml-2">No</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Continue with other PUST fields... -->
+                </div>
+            `;
+        }
+
+        // U.S. Contact Information Step (Based on Excel USCI section)
+        function generateUSContactStep(applicant) {
+            const usci = applicant.usContactInfo || {};
+            
+            return `
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Contact Type</label>
+                        <select name="usci_contact_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="toggleContactTypeFields(this.value); updateApplicantData('usContactInfo', 'usci_contact_type', this.value)">
+                            <option value="">Select Type</option>
+                            <option value="Person" ${(usci.usci_contact_type === 'Person') ? 'selected' : ''}>Person</option>
+                            <option value="Company" ${(usci.usci_contact_type === 'Company') ? 'selected' : ''}>Company</option>
+                            <option value="Hotel" ${(usci.usci_contact_type === 'Hotel') ? 'selected' : ''}>Hotel</option>
+                        </select>
+                    </div>
+
+                    <!-- Person Contact -->
+                    <div id="person-contact" class="conditional-block ${usci.usci_contact_type === 'Person' ? 'active' : ''}">
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium text-gray-800">Person Contact Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Contact Person Surname</label>
+                                    <input type="text" name="usci_contact_person_surname" 
+                                           value="${usci.usci_contact_person_surname || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('usContactInfo', 'usci_contact_person_surname', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Contact Person Given Name</label>
+                                    <input type="text" name="usci_contact_person_given_name" 
+                                           value="${usci.usci_contact_person_given_name || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('usContactInfo', 'usci_contact_person_given_name', this.value)">
+                                </div>
+                            </div>
+                            <!-- Add more person contact fields... -->
+                        </div>
+                    </div>
+
+                    <!-- Company Contact -->
+                    <div id="company-contact" class="conditional-block ${usci.usci_contact_type === 'Company' ? 'active' : ''}">
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium text-gray-800">Company Contact Details</h4>
+                            <!-- Add company contact fields... -->
+                        </div>
+                    </div>
+
+                    <!-- Hotel Contact -->
+                    <div id="hotel-contact" class="conditional-block ${usci.usci_contact_type === 'Hotel' ? 'active' : ''}">
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium text-gray-800">Hotel Contact Details</h4>
+                            <!-- Add hotel contact fields... -->
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Family Member Information Step (Based on Excel FM section)
+        function generateFamilyInfoStep(applicant) {
+            const fm = applicant.familyInfo || {};
+            const familyMembers = fm.familyMembers || [];
+            
+            return `
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Family Members</h3>
+                        <div id="family-member-fields">
+                            ${generateFamilyMemberFields(familyMembers)}
+                        </div>
+                        <button type="button" onclick="addFamilyMemberField()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                            <i class="fas fa-plus mr-2"></i> Add Family Member
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Is your father in the USA?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="fm_in_usa" value="1" 
+                                       ${fm.fm_in_usa ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('father-in-usa', this.checked); updateApplicantData('familyInfo', 'fm_in_usa', this.checked)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="fm_in_usa" value="0" 
+                                       ${!fm.fm_in_usa ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('father-in-usa', this.checked); updateApplicantData('familyInfo', 'fm_in_usa', this.checked)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="father-in-usa" class="conditional-block ${fm.fm_in_usa ? 'active' : ''}">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Status of Person in USA</label>
+                            <select name="fm_person_status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('familyInfo', 'fm_person_status', this.value)">
+                                <option value="">Select Status</option>
+                                <option value="Citizen" ${(fm.fm_person_status === 'Citizen') ? 'selected' : ''}>Citizen</option>
+                                <option value="Permanent Resident" ${(fm.fm_person_status === 'Permanent Resident') ? 'selected' : ''}>Permanent Resident</option>
+                                <option value="Non immigrant" ${(fm.fm_person_status === 'Non immigrant') ? 'selected' : ''}>Non immigrant</option>
+                                <option value="Others" ${(fm.fm_person_status === 'Others') ? 'selected' : ''}>Others</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Add spouse specific fields... -->
+                </div>
+            `;
+        }
+
+        // Work Information Step (Based on Excel WI section)
+        function generateWorkInfoStep(applicant) {
+            const wi = applicant.employmentInfo || {};
+            const previousEmployment = wi.previousEmployment || [];
+            
+            return `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Occupation *</label>
+                            <input type="text" name="wi_occupation" 
+                                   value="${wi.wi_occupation || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateApplicantData('employmentInfo', 'wi_occupation', this.value)" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Present Company or School Name</label>
+                            <input type="text" name="wi_company_or_school_name" 
+                                   value="${wi.wi_company_or_school_name || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_name', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Company/School Address -->
+                    <div class="border-t pt-6">
+                        <h4 class="text-lg font-medium text-gray-800 mb-4">Present Company or School Address</h4>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Address Line 1</label>
+                                    <input type="text" name="wi_company_or_school_address_line_1" 
+                                           value="${wi.wi_company_or_school_address_line_1 || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_address_line_1', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Address Line 2</label>
+                                    <input type="text" name="wi_company_or_school_address_line_2" 
+                                           value="${wi.wi_company_or_school_address_line_2 || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_address_line_2', this.value)">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">City</label>
+                                    <input type="text" name="wi_company_or_school_address_city" 
+                                           value="${wi.wi_company_or_school_address_city || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_address_city', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">State</label>
+                                    <input type="text" name="wi_company_or_school_address_state" 
+                                           value="${wi.wi_company_or_school_address_state || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_address_state', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Zip Code</label>
+                                    <input type="text" name="wi_company_or_school_address_zip_code" 
+                                           value="${wi.wi_company_or_school_address_zip_code || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_address_zip_code', this.value)">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Country</label>
+                                    <select name="wi_company_or_school_address_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_address_country', this.value)">
+                                        <option value="">Select Country</option>
+                                        <option value="USA" ${(wi.wi_company_or_school_address_country === 'USA') ? 'selected' : ''}>United States</option>
+                                        <option value="UK" ${(wi.wi_company_or_school_address_country === 'UK') ? 'selected' : ''}>United Kingdom</option>
+                                        <option value="BD" ${(wi.wi_company_or_school_address_country === 'BD') ? 'selected' : ''}>Bangladesh</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Telephone</label>
+                                    <input type="tel" name="wi_company_or_school_address_telephone" 
+                                           value="${wi.wi_company_or_school_address_telephone || ''}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           onchange="updateApplicantData('employmentInfo', 'wi_company_or_school_address_telephone', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add more work information fields... -->
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Were you previously employed?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="have_previous_experience" value="1" 
+                                       ${wi.have_previous_experience ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('previous-employment', this.checked); updateApplicantData('employmentInfo', 'have_previous_experience', this.checked)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="have_previous_experience" value="0" 
+                                       ${!wi.have_previous_experience ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('previous-employment', this.checked); updateApplicantData('employmentInfo', 'have_previous_experience', this.checked)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="previous-employment" class="conditional-block ${wi.have_previous_experience ? 'active' : ''}">
+                        <div class="space-y-6">
+                            <h4 class="text-lg font-medium text-gray-800">Previous Employment History</h4>
+                            <div id="previous-employment-fields">
+                                ${generatePreviousEmploymentFields(previousEmployment)}
+                            </div>
+                            <button type="button" onclick="addPreviousEmploymentField()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                                <i class="fas fa-plus mr-2"></i> Add Previous Employment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Educational Information Step (Based on Excel EDI section)
+        function generateEducationInfoStep(applicant) {
+            const edi = applicant.educationalInfo || {};
+            const institutions = edi.institutions || [];
+            
+            return `
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Have you attended any educational institution at a secondary level or above?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="edi_have_attended_secondary_level" value="1" 
+                                       ${edi.edi_have_attended_secondary_level ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('education-history', this.checked); updateApplicantData('educationalInfo', 'edi_have_attended_secondary_level', this.checked)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="edi_have_attended_secondary_level" value="0" 
+                                       ${!edi.edi_have_attended_secondary_level ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('education-history', this.checked); updateApplicantData('educationalInfo', 'edi_have_attended_secondary_level', this.checked)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="education-history" class="conditional-block ${edi.edi_have_attended_secondary_level ? 'active' : ''}">
+                        <div class="space-y-6">
+                            <h4 class="text-lg font-medium text-gray-800">Educational Institutions</h4>
+                            <div id="institution-fields">
+                                ${generateInstitutionFields(institutions)}
+                            </div>
+                            <button type="button" onclick="addInstitutionField()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                                <i class="fas fa-plus mr-2"></i> Add Institution
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Other Information Step (Based on Excel OI section)
+        function generateOtherInfoStep(applicant) {
+            const oi = applicant.otherInfo || {};
+            
+            return `
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2">List of Languages Spoken</label>
+                        <textarea name="oi_spoken_language_list" 
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  rows="3"
+                                  onchange="updateApplicantData('otherInfo', 'oi_spoken_language_list', this.value)">${oi.oi_spoken_language_list || ''}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Have you traveled to any countries in the last five years?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="oi_have_travel_country_5years" value="1" 
+                                       ${oi.oi_have_travel_country_5years ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('traveled-countries', this.checked); updateApplicantData('otherInfo', 'oi_have_travel_country_5years', this.checked)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="oi_have_travel_country_5years" value="0" 
+                                       ${!oi.oi_have_travel_country_5years ? 'checked' : ''}
+                                       onchange="toggleConditionalBlock('traveled-countries', this.checked); updateApplicantData('otherInfo', 'oi_have_travel_country_5years', this.checked)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="traveled-countries" class="conditional-block ${oi.oi_have_travel_country_5years ? 'active' : ''}">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Traveled Countries</label>
+                            <input type="text" name="oi_travelled_country" 
+                                   value="${oi.oi_travelled_country || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateApplicantData('otherInfo', 'oi_travelled_country', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Add more other information fields... -->
+                </div>
+            `;
+        }
+
         // Helper functions for dynamic fields
         function generateEmailFields(emails) {
             return emails.map((email, index) => `
@@ -1141,6 +1659,153 @@ if ($pnr) {
             `).join('');
         }
 
+        function generateFamilyMemberFields(familyMembers) {
+            return familyMembers.map((member, index) => `
+                <div class="dynamic-field-group">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-medium text-gray-700">Family Member ${index + 1}</h4>
+                        ${index > 0 ? `
+                        <button type="button" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-lg text-sm" onclick="removeFamilyMemberField(${index})">
+                            Remove Member
+                        </button>
+                        ` : ''}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Relation</label>
+                            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateFamilyMemberData(${index}, 'relation', this.value)">
+                                <option value="">Select Relation</option>
+                                <option value="Father" ${(member.relation === 'Father') ? 'selected' : ''}>Father</option>
+                                <option value="Mother" ${(member.relation === 'Mother') ? 'selected' : ''}>Mother</option>
+                                <option value="Spouse" ${(member.relation === 'Spouse') ? 'selected' : ''}>Spouse</option>
+                                <option value="Child" ${(member.relation === 'Child') ? 'selected' : ''}>Child</option>
+                                <option value="Sibling" ${(member.relation === 'Sibling') ? 'selected' : ''}>Sibling</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Given Name</label>
+                            <input type="text" 
+                                   value="${member.givenName || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateFamilyMemberData(${index}, 'givenName', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Surname</label>
+                            <input type="text" 
+                                   value="${member.familyName || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateFamilyMemberData(${index}, 'familyName', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Date of Birth</label>
+                            <input type="date" 
+                                   value="${member.dob || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateFamilyMemberData(${index}, 'dob', this.value)">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 mb-2">Country of Nationality</label>
+                            <input type="text" 
+                                   value="${member.nationality || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateFamilyMemberData(${index}, 'nationality', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generatePreviousEmploymentFields(previousEmployment) {
+            return previousEmployment.map((employment, index) => `
+                <div class="dynamic-field-group">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-medium text-gray-700">Previous Employment ${index + 1}</h4>
+                        ${index > 0 ? `
+                        <button type="button" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-lg text-sm" onclick="removePreviousEmploymentField(${index})">
+                            Remove Employment
+                        </button>
+                        ` : ''}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Company Name</label>
+                            <input type="text" 
+                                   value="${employment.companyName || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updatePreviousEmploymentData(${index}, 'companyName', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Job Title</label>
+                            <input type="text" 
+                                   value="${employment.jobTitle || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updatePreviousEmploymentData(${index}, 'jobTitle', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Employment Start Date</label>
+                            <input type="date" 
+                                   value="${employment.startDate || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updatePreviousEmploymentData(${index}, 'startDate', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Employment End Date</label>
+                            <input type="date" 
+                                   value="${employment.endDate || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updatePreviousEmploymentData(${index}, 'endDate', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateInstitutionFields(institutions) {
+            return institutions.map((institution, index) => `
+                <div class="dynamic-field-group">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-medium text-gray-700">Institution ${index + 1}</h4>
+                        ${index > 0 ? `
+                        <button type="button" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-lg text-sm" onclick="removeInstitutionField(${index})">
+                            Remove Institution
+                        </button>
+                        ` : ''}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Institution Name</label>
+                            <input type="text" 
+                                   value="${institution.name || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateInstitutionData(${index}, 'name', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Course of Study</label>
+                            <input type="text" 
+                                   value="${institution.course || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateInstitutionData(${index}, 'course', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Attendance From</label>
+                            <input type="date" 
+                                   value="${institution.attendanceFrom || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateInstitutionData(${index}, 'attendanceFrom', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Attendance To</label>
+                            <input type="date" 
+                                   value="${institution.attendanceTo || ''}" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   onchange="updateInstitutionData(${index}, 'attendanceTo', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         // Dynamic field management functions
         function addEmailField() {
             const applicant = state.applicants[state.currentApplicant];
@@ -1184,6 +1849,52 @@ if ($pnr) {
             saveToLocalStorage();
         }
 
+        function addFamilyMemberField() {
+            const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.familyInfo.familyMembers) {
+                applicant.familyInfo.familyMembers = [];
+            }
+            applicant.familyInfo.familyMembers.push({
+                relation: '',
+                givenName: '',
+                familyName: '',
+                dob: '',
+                nationality: ''
+            });
+            generateFormSteps();
+            saveToLocalStorage();
+        }
+
+        function addPreviousEmploymentField() {
+            const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.employmentInfo.previousEmployment) {
+                applicant.employmentInfo.previousEmployment = [];
+            }
+            applicant.employmentInfo.previousEmployment.push({
+                companyName: '',
+                jobTitle: '',
+                startDate: '',
+                endDate: ''
+            });
+            generateFormSteps();
+            saveToLocalStorage();
+        }
+
+        function addInstitutionField() {
+            const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.educationalInfo.institutions) {
+                applicant.educationalInfo.institutions = [];
+            }
+            applicant.educationalInfo.institutions.push({
+                name: '',
+                course: '',
+                attendanceFrom: '',
+                attendanceTo: ''
+            });
+            generateFormSteps();
+            saveToLocalStorage();
+        }
+
         function removeContactField(type, index) {
             const applicant = state.applicants[state.currentApplicant];
             if (applicant.contactInfo[type]) {
@@ -1206,6 +1917,33 @@ if ($pnr) {
             const applicant = state.applicants[state.currentApplicant];
             if (applicant.travelInfo.locations && applicant.travelInfo.locations.length > 1) {
                 applicant.travelInfo.locations.splice(index, 1);
+                generateFormSteps();
+                saveToLocalStorage();
+            }
+        }
+
+        function removeFamilyMemberField(index) {
+            const applicant = state.applicants[state.currentApplicant];
+            if (applicant.familyInfo.familyMembers && applicant.familyInfo.familyMembers.length > 1) {
+                applicant.familyInfo.familyMembers.splice(index, 1);
+                generateFormSteps();
+                saveToLocalStorage();
+            }
+        }
+
+        function removePreviousEmploymentField(index) {
+            const applicant = state.applicants[state.currentApplicant];
+            if (applicant.employmentInfo.previousEmployment && applicant.employmentInfo.previousEmployment.length > 1) {
+                applicant.employmentInfo.previousEmployment.splice(index, 1);
+                generateFormSteps();
+                saveToLocalStorage();
+            }
+        }
+
+        function removeInstitutionField(index) {
+            const applicant = state.applicants[state.currentApplicant];
+            if (applicant.educationalInfo.institutions && applicant.educationalInfo.institutions.length > 1) {
+                applicant.educationalInfo.institutions.splice(index, 1);
                 generateFormSteps();
                 saveToLocalStorage();
             }
@@ -1244,9 +1982,51 @@ if ($pnr) {
             saveToLocalStorage();
         }
 
+        function updateFamilyMemberData(index, field, value) {
+            const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.familyInfo.familyMembers) {
+                applicant.familyInfo.familyMembers = [];
+            }
+            if (!applicant.familyInfo.familyMembers[index]) {
+                applicant.familyInfo.familyMembers[index] = {};
+            }
+            applicant.familyInfo.familyMembers[index][field] = value;
+            saveToLocalStorage();
+        }
+
+        function updatePreviousEmploymentData(index, field, value) {
+            const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.employmentInfo.previousEmployment) {
+                applicant.employmentInfo.previousEmployment = [];
+            }
+            if (!applicant.employmentInfo.previousEmployment[index]) {
+                applicant.employmentInfo.previousEmployment[index] = {};
+            }
+            applicant.employmentInfo.previousEmployment[index][field] = value;
+            saveToLocalStorage();
+        }
+
+        function updateInstitutionData(index, field, value) {
+            const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.educationalInfo.institutions) {
+                applicant.educationalInfo.institutions = [];
+            }
+            if (!applicant.educationalInfo.institutions[index]) {
+                applicant.educationalInfo.institutions[index] = {};
+            }
+            applicant.educationalInfo.institutions[index][field] = value;
+            saveToLocalStorage();
+        }
+
         function toggleTravelPlanFields(value) {
             document.getElementById('no-travel-plan').classList.toggle('active', value === 'no');
             document.getElementById('yes-travel-plan').classList.toggle('active', value === 'yes');
+        }
+
+        function toggleContactTypeFields(value) {
+            document.getElementById('person-contact').classList.toggle('active', value === 'Person');
+            document.getElementById('company-contact').classList.toggle('active', value === 'Company');
+            document.getElementById('hotel-contact').classList.toggle('active', value === 'Hotel');
         }
 
         // Utility functions
@@ -1405,154 +2185,6 @@ if ($pnr) {
             generateStepNavigation();
             updateUI();
             saveToLocalStorage();
-        }
-
-        // Placeholder functions for other steps
-        function generateTravelCompanionStep(applicant) { 
-            return `
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Are you traveling with anyone?</label>
-                        <div class="flex space-x-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="tci_have_anyone" value="1" 
-                                       ${applicant.travelInfo.tci_have_anyone ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('travel-companion', this.checked); updateApplicantData('travelInfo', 'tci_have_anyone', this.checked)">
-                                <span class="ml-2">Yes</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="tci_have_anyone" value="0" 
-                                       ${!applicant.travelInfo.tci_have_anyone ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('travel-companion', this.checked); updateApplicantData('travelInfo', 'tci_have_anyone', this.checked)">
-                                <span class="ml-2">No</span>
-                            </label>
-                        </div>
-                    </div>
-                    <!-- Add more travel companion fields as needed -->
-                </div>
-            `;
-        }
-        
-        function generatePreviousTravelStep(applicant) { 
-            return `
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Have you ever issued a visa to the USA?</label>
-                        <div class="flex space-x-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="pust_have_ever_issued" value="1" 
-                                       ${applicant.travelHistory.pust_have_ever_issued ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('previous-visa', this.checked); updateApplicantData('travelHistory', 'pust_have_ever_issued', this.checked)">
-                                <span class="ml-2">Yes</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="pust_have_ever_issued" value="0" 
-                                       ${!applicant.travelHistory.pust_have_ever_issued ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('previous-visa', this.checked); updateApplicantData('travelHistory', 'pust_have_ever_issued', this.checked)">
-                                <span class="ml-2">No</span>
-                            </label>
-                        </div>
-                    </div>
-                    <!-- Add more previous travel fields as needed -->
-                </div>
-            `;
-        }
-        
-        function generateUSContactStep(applicant) { 
-            return `
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Contact Type</label>
-                        <select name="usci_contact_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                onchange="updateApplicantData('usContactInfo', 'usci_contact_type', this.value)">
-                            <option value="">Select Type</option>
-                            <option value="Person" ${(applicant.usContactInfo.usci_contact_type === 'Person') ? 'selected' : ''}>Person</option>
-                            <option value="Company" ${(applicant.usContactInfo.usci_contact_type === 'Company') ? 'selected' : ''}>Company</option>
-                            <option value="Hotel" ${(applicant.usContactInfo.usci_contact_type === 'Hotel') ? 'selected' : ''}>Hotel</option>
-                        </select>
-                    </div>
-                    <!-- Add more US contact fields as needed -->
-                </div>
-            `;
-        }
-        
-        function generateFamilyInfoStep(applicant) { 
-            return `
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Is your father in the USA?</label>
-                        <div class="flex space-x-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="fm_in_usa" value="1" 
-                                       ${applicant.familyInfo.fm_in_usa ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('father-in-usa', this.checked); updateApplicantData('familyInfo', 'fm_in_usa', this.checked)">
-                                <span class="ml-2">Yes</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="fm_in_usa" value="0" 
-                                       ${!applicant.familyInfo.fm_in_usa ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('father-in-usa', this.checked); updateApplicantData('familyInfo', 'fm_in_usa', this.checked)">
-                                <span class="ml-2">No</span>
-                            </label>
-                        </div>
-                    </div>
-                    <!-- Add more family info fields as needed -->
-                </div>
-            `;
-        }
-        
-        function generateWorkInfoStep(applicant) { 
-            return `
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Occupation</label>
-                        <input type="text" name="wi_occupation" 
-                               value="${applicant.employmentInfo.wi_occupation || ''}" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                               onchange="updateApplicantData('employmentInfo', 'wi_occupation', this.value)">
-                    </div>
-                    <!-- Add more work info fields as needed -->
-                </div>
-            `;
-        }
-        
-        function generateEducationInfoStep(applicant) { 
-            return `
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Have you attended any educational institution at a secondary level or above?</label>
-                        <div class="flex space-x-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="edi_have_attended_secondary_level" value="1" 
-                                       ${applicant.educationalInfo.edi_have_attended_secondary_level ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('education-history', this.checked); updateApplicantData('educationalInfo', 'edi_have_attended_secondary_level', this.checked)">
-                                <span class="ml-2">Yes</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="edi_have_attended_secondary_level" value="0" 
-                                       ${!applicant.educationalInfo.edi_have_attended_secondary_level ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('education-history', this.checked); updateApplicantData('educationalInfo', 'edi_have_attended_secondary_level', this.checked)">
-                                <span class="ml-2">No</span>
-                            </label>
-                        </div>
-                    </div>
-                    <!-- Add more education info fields as needed -->
-                </div>
-            `;
-        }
-        
-        function generateOtherInfoStep(applicant) { 
-            return `
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">List of Languages Spoken</label>
-                        <textarea name="oi_spoken_language_list" 
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  onchange="updateApplicantData('otherInfo', 'oi_spoken_language_list', this.value)">${applicant.otherInfo.oi_spoken_language_list || ''}</textarea>
-                    </div>
-                    <!-- Add more other info fields as needed -->
-                </div>
-            `;
         }
 
         function loadSavedApplication() {
