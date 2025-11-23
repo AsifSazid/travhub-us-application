@@ -1982,10 +1982,12 @@ if ($pnr) {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-gray-700 mb-2">Date of Arrival</label>
-                            <input type="date" name="pust_arrival_date" 
-                                value="${travel.arrival_date || ''}" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                onchange="updatePreviousTravelData(${index}, 'arrival_date', this.value)">
+                            <input type="text" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                value="${travel.arrival_date ? convertToDisplay(travel.arrival_date) : ''}" 
+                                onchange="handleDateChange(${index}, 'arrival_date', this.value)"
+                                placeholder="DD/MM/YYYY"
+                                required>
                         </div>
                         <div>
                             <label class="block text-gray-700 mb-2">Length of Stay</label>
@@ -3317,11 +3319,6 @@ if ($pnr) {
         
         // ------------- DONE -- END ---------------
 
-
-
-        
-
-
         // Other Information Step (Based on Excel OI section)
         function generateOtherInfoStep(applicant) {
             const oi = applicant.otherInfo || {};
@@ -3368,6 +3365,11 @@ if ($pnr) {
                 </div>
             `;
         }
+
+
+        
+
+
 
         // Helper functions for dynamic fields
         function generateEmailFields(emails) {
