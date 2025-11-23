@@ -15,7 +15,7 @@ if ($pnr) {
         $stmt2 = $pdo->prepare("SELECT * FROM applicants WHERE pnr = ?");
         $stmt2->execute([$pnr]);
         $appRows = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $applicants = [];
         foreach ($appRows as $ap) {
             $applicants[] = [
@@ -51,6 +51,7 @@ if ($pnr) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,23 +59,87 @@ if ($pnr) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .step { display: none; }
-        .step.active { display: block; }
-        .tab { cursor: pointer; transition: all 0.3s ease; }
-        .tab.active { background-color: #3b82f6; color: white; }
-        .progress-bar { transition: width 0.5s ease-in-out; }
-        .step-nav-item { cursor: pointer; transition: all 0.3s ease; border-left: 3px solid transparent; }
-        .step-nav-item:hover { background-color: #f3f4f6; }
-        .step-nav-item.active { border-left-color: #3b82f6; background-color: #eff6ff; }
-        .step-nav-item.completed .step-icon { background-color: #10b981; color: white; }
-        .step-nav-item.current .step-icon { background-color: #3b82f6; color: white; }
-        .dynamic-field-group { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; background-color: #f9fafb; }
-        .conditional-block { display: none; }
-        .conditional-block.active { display: block; }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .tab {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+
+        .step-nav-item {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .step-nav-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        .step-nav-item.active {
+            border-left-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .step-nav-item.completed .step-icon {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .step-nav-item.current .step-icon {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .dynamic-field-group {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: #f9fafb;
+        }
+
+        .conditional-block {
+            display: none;
+        }
+
+        .conditional-block.active {
+            display: block;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Header -->
@@ -212,6 +277,36 @@ if ($pnr) {
     </div>
 
     <script>
+        // তারিখ validation ফাংশন
+        function isValidDate(dateString) {
+            // DD/MM/YYYY format validate
+            const pattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+            if (!pattern.test(dateString)) return false;
+
+            const [_, day, month, year] = pattern.exec(dateString);
+            const date = new Date(year, month - 1, day);
+
+            return date.getDate() == day &&
+                date.getMonth() == month - 1 &&
+                date.getFullYear() == year;
+        }
+
+        // DD/MM/YYYY থেকে YYYY-MM-DD তে convert
+        function convertToISO(dateString) {
+            if (!isValidDate(dateString)) return '';
+
+            const [day, month, year] = dateString.split('/');
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        // YYYY-MM-DD থেকে DD/MM/YYYY তে convert
+        function convertToDisplay(isoDate) {
+            if (!isoDate) return '';
+
+            const [year, month, day] = isoDate.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
         // Application state
         const state = {
             currentApplicant: <?= $dbApplicationData['currentApplicant'] ?? 0 ?>,
@@ -220,17 +315,56 @@ if ($pnr) {
             totalApplicants: <?= $dbApplicationData['totalApplicants'] ?? 1 ?>,
             pnr: '<?= $dbApplicationData['pnr'] ?? '' ?>',
             applicants: <?= json_encode($dbApplicationData['applicants'] ?? []) ?>,
-            steps: [
-                { name: 'Personal Information (PI)', icon: 'fa-user', description: 'Personal and contact details' },
-                { name: 'Travel Information (TI)', icon: 'fa-plane', description: 'Travel plans and purpose' },
-                { name: 'Passport Information (PP)', icon: 'fa-passport', description: 'Passport details' },
-                { name: 'Travel Companion Information (TCI)', icon: 'fa-users', description: 'Travel companions details' },
-                { name: 'Previous U.S. Travel (PUST)', icon: 'fa-history', description: 'Previous travel history to USA' },
-                { name: 'U.S. Contact Information (USCI)', icon: 'fa-address-book', description: 'Contacts in USA' },
-                { name: 'Family Member Information (FM)', icon: 'fa-user-friends', description: 'Family members details' },
-                { name: 'Work Information (WI)', icon: 'fa-briefcase', description: 'Employment and work history' },
-                { name: 'Educational Information (EDI)', icon: 'fa-graduation-cap', description: 'Educational background' },
-                { name: 'Other Information (OI)', icon: 'fa-info-circle', description: 'Additional information' }
+            steps: [{
+                    name: 'Personal Information (PI)',
+                    icon: 'fa-user',
+                    description: 'Personal and contact details'
+                },
+                {
+                    name: 'Travel Information (TI)',
+                    icon: 'fa-plane',
+                    description: 'Travel plans and purpose'
+                },
+                {
+                    name: 'Passport Information (PP)',
+                    icon: 'fa-passport',
+                    description: 'Passport details'
+                },
+                {
+                    name: 'Travel Companion Information (TCI)',
+                    icon: 'fa-users',
+                    description: 'Travel companions details'
+                },
+                {
+                    name: 'Previous U.S. Travel (PUST)',
+                    icon: 'fa-history',
+                    description: 'Previous travel history to USA'
+                },
+                {
+                    name: 'U.S. Contact Information (USCI)',
+                    icon: 'fa-address-book',
+                    description: 'Contacts in USA'
+                },
+                {
+                    name: 'Family Member Information (FM)',
+                    icon: 'fa-user-friends',
+                    description: 'Family members details'
+                },
+                {
+                    name: 'Work Information (WI)',
+                    icon: 'fa-briefcase',
+                    description: 'Employment and work history'
+                },
+                {
+                    name: 'Educational Information (EDI)',
+                    icon: 'fa-graduation-cap',
+                    description: 'Educational background'
+                },
+                {
+                    name: 'Other Information (OI)',
+                    icon: 'fa-info-circle',
+                    description: 'Additional information'
+                }
             ]
         };
 
@@ -275,12 +409,12 @@ if ($pnr) {
         function startApplication() {
             const applicantCount = parseInt(document.getElementById('applicant-count').value);
             state.totalApplicants = applicantCount;
-            
+
             // Generate PNR if not already set
             if (!state.pnr) {
                 state.pnr = generatePNR();
             }
-            
+
             // Initialize all applicants
             state.applicants = [];
             for (let i = 0; i < applicantCount; i++) {
@@ -290,17 +424,17 @@ if ($pnr) {
             // Hide initial screen and show form
             document.getElementById('initial-screen').classList.add('hidden');
             document.getElementById('multi-applicant-form').classList.remove('hidden');
-            
+
             // Display PNR
             document.getElementById('pnr-display').textContent = state.pnr;
             document.getElementById('total-applicants').textContent = state.totalApplicants;
-            
+
             // Generate UI components
             generateTabs();
             generateStepNavigation();
             generateFormSteps();
             updateUI();
-            
+
             // Save initial state
             saveToLocalStorage();
         }
@@ -357,7 +491,7 @@ if ($pnr) {
         function generateFormSteps() {
             const formStepsContainer = document.getElementById('form-steps');
             formStepsContainer.innerHTML = '';
-            
+
             state.steps.forEach((step, index) => {
                 const stepElement = document.createElement('div');
                 stepElement.className = `step fade-in ${index === state.currentStep ? 'active' : ''}`;
@@ -376,432 +510,567 @@ if ($pnr) {
 
         function generateStepContent(stepIndex) {
             const applicant = state.applicants[state.currentApplicant];
-            switch(stepIndex) {
-                case 0: return generatePersonalInfoStep(applicant);
-                case 1: return generateTravelInfoStep(applicant);
-                case 2: return generatePassportInfoStep(applicant);
-                case 3: return generateTravelCompanionStep(applicant);
-                case 4: return generatePreviousTravelStep(applicant);
-                case 5: return generateUSContactStep(applicant);
-                case 6: return generateFamilyInfoStep(applicant);
-                case 7: return generateWorkInfoStep(applicant);
-                case 8: return generateEducationInfoStep(applicant);
-                case 9: return generateOtherInfoStep(applicant);
-                default: return '<p>Step content not defined.</p>';
+            switch (stepIndex) {
+                case 0:
+                    return generatePersonalInfoStep(applicant);
+                case 1:
+                    return generateTravelInfoStep(applicant);
+                case 2:
+                    return generatePassportInfoStep(applicant);
+                case 3:
+                    return generateTravelCompanionStep(applicant);
+                case 4:
+                    return generatePreviousTravelStep(applicant);
+                case 5:
+                    return generateUSContactStep(applicant);
+                case 6:
+                    return generateFamilyInfoStep(applicant);
+                case 7:
+                    return generateWorkInfoStep(applicant);
+                case 8:
+                    return generateEducationInfoStep(applicant);
+                case 9:
+                    return generateOtherInfoStep(applicant);
+                default:
+                    return '<p>Step content not defined.</p>';
             }
         }
+
+        // Country data - will be replaced with JSON API data
+        const countries = [{
+                code: 'USA',
+                name: 'United States'
+            },
+            {
+                code: 'UK',
+                name: 'United Kingdom'
+            },
+            {
+                code: 'BD',
+                name: 'Bangladesh'
+            },
+            {
+                code: 'IN',
+                name: 'India'
+            },
+            {
+                code: 'CA',
+                name: 'Canada'
+            },
+            {
+                code: 'AU',
+                name: 'Australia'
+            },
+            {
+                code: 'DE',
+                name: 'Germany'
+            },
+            {
+                code: 'FR',
+                name: 'France'
+            }
+        ];
+
+        // Social media platforms
+        const socialMediaPlatforms = [
+            'Facebook',
+            'Twitter',
+            'Instagram',
+            'LinkedIn',
+            'YouTube',
+            'TikTok',
+            'Snapchat',
+            'Pinterest',
+            'Reddit',
+            'WhatsApp',
+            'Telegram',
+            'WeChat',
+            'Other'
+        ];
 
         // Personal Information Step (Based on Excel PI section)
         function generatePersonalInfoStep(applicant) {
             const pi = applicant.passportInfo || {};
             const ci = applicant.contactInfo || {};
-            
+
+            // Generate country options
+            const generateCountryOptions = (selectedValue) => {
+                return countries.map(country =>
+                    `<option value="${country.code}" ${(selectedValue === country.code) ? 'selected' : ''}>${country.name}</option>`
+                ).join('');
+            };
+
             return `
-                <div class="space-y-6">
-                    <!-- Basic Personal Info -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-6">
+                        <!-- Traveler Field -->
                         <div>
-                            <label class="block text-gray-700 mb-2">Surname *</label>
-                            <input type="text" name="pi_sur_name" 
-                                   value="${pi.pi_sur_name || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pi_sur_name', this.value)" required>
+                            <label class="block text-gray-700 mb-2">Traveler *</label>
+                            <select name="pi_traveler" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_traveler', this.value)" required>
+                                <option value="">Select Traveler</option>
+                                <!-- Options will be populated dynamically from JSON/API -->
+                                <option value="traveler1" ${(pi.pi_traveler === 'traveler1') ? 'selected' : ''}>Traveler 1</option>
+                                <option value="traveler2" ${(pi.pi_traveler === 'traveler2') ? 'selected' : ''}>Traveler 2</option>
+                                <option value="traveler3" ${(pi.pi_traveler === 'traveler3') ? 'selected' : ''}>Traveler 3</option>
+                            </select>
                         </div>
-                        <div>
-                            <label class="block text-gray-700 mb-2">Given Name *</label>
-                            <input type="text" name="pi_given_name" 
-                                   value="${pi.pi_given_name || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pi_given_name', this.value)" required>
-                        </div>
-                    </div>
 
-                    <!-- Other Name Toggle -->
-                    <div>
-                        <label class="block text-gray-700 mb-2">Do you have other name?</label>
-                        <div class="flex space-x-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="pi_have_other_name" value="1" 
-                                       ${pi.pi_have_other_name ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('other-name', this.checked); updateApplicantData('passportInfo', 'pi_have_other_name', this.checked)">
-                                <span class="ml-2">Yes</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="pi_have_other_name" value="0" 
-                                       ${!pi.pi_have_other_name ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('other-name', this.checked); updateApplicantData('passportInfo', 'pi_have_other_name', this.checked)">
-                                <span class="ml-2">No</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Conditional Other Name Fields -->
-                    <div id="other-name" class="conditional-block ${pi.pi_have_other_name ? 'active' : ''}">
+                        <!-- Basic Personal Info -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-gray-700 mb-2">Other Surname</label>
-                                <input type="text" name="pi_other_sur_name" 
-                                       value="${pi.pi_other_sur_name || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('passportInfo', 'pi_other_sur_name', this.value)">
+                                <label class="block text-gray-700 mb-2">Surname *</label>
+                                <input type="text" name="pi_sur_name" value="${pi.pi_sur_name || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_sur_name', this.value)" required>
                             </div>
                             <div>
-                                <label class="block text-gray-700 mb-2">Other Given Name</label>
-                                <input type="text" name="pi_other_given_name" 
-                                       value="${pi.pi_other_given_name || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('passportInfo', 'pi_other_given_name', this.value)">
+                                <label class="block text-gray-700 mb-2">Given Name *</label>
+                                <input type="text" name="pi_given_name" value="${pi.pi_given_name || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_given_name', this.value)" required>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Gender and Marital Status -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Other Name Toggle -->
                         <div>
-                            <label class="block text-gray-700 mb-2">Gender *</label>
-                            <select name="pi_gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateApplicantData('passportInfo', 'pi_gender', this.value)" required>
-                                <option value="">Select Gender</option>
-                                <option value="Male" ${(pi.pi_gender === 'Male') ? 'selected' : ''}>Male</option>
-                                <option value="Female" ${(pi.pi_gender === 'Female') ? 'selected' : ''}>Female</option>
-                                <option value="Other" ${(pi.pi_gender === 'Other') ? 'selected' : ''}>Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-2">Marital Status *</label>
-                            <select name="pi_marital_status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateApplicantData('passportInfo', 'pi_marital_status', this.value)" required>
-                                <option value="">Select Marital Status</option>
-                                <option value="Single" ${(pi.pi_marital_status === 'Single') ? 'selected' : ''}>Single</option>
-                                <option value="Married" ${(pi.pi_marital_status === 'Married') ? 'selected' : ''}>Married</option>
-                                <option value="Divorced" ${(pi.pi_marital_status === 'Divorced') ? 'selected' : ''}>Divorced</option>
-                                <option value="Widowed" ${(pi.pi_marital_status === 'Widowed') ? 'selected' : ''}>Widowed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Date of Birth -->
-                    <div>
-                        <label class="block text-gray-700 mb-2">Date of Birth *</label>
-                        <input type="date" name="pi_dob" 
-                               value="${pi.pi_dob || ''}" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                               onchange="updateApplicantData('passportInfo', 'pi_dob', this.value)" required>
-                    </div>
-
-                    <!-- Place and Country of Birth -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 mb-2">Place of Birth *</label>
-                            <input type="text" name="pi_pob" 
-                                   value="${pi.pi_pob || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pi_pob', this.value)" required>
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-2">Country of Birth *</label>
-                            <select name="pi_cob" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateApplicantData('passportInfo', 'pi_cob', this.value)" required>
-                                <option value="">Select Country</option>
-                                <option value="USA" ${(pi.pi_cob === 'USA') ? 'selected' : ''}>United States</option>
-                                <option value="UK" ${(pi.pi_cob === 'UK') ? 'selected' : ''}>United Kingdom</option>
-                                <option value="BD" ${(pi.pi_cob === 'BD') ? 'selected' : ''}>Bangladesh</option>
-                                <option value="IN" ${(pi.pi_cob === 'IN') ? 'selected' : ''}>India</option>
-                                <option value="CA" ${(pi.pi_cob === 'CA') ? 'selected' : ''}>Canada</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Home Address Section -->
-                    <div class="border-t pt-6">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">Home Address</h3>
-                        <div class="grid grid-cols-1 gap-4">
-                            <div>
-                                <label class="block text-gray-700 mb-2">Address Line 1 *</label>
-                                <input type="text" name="pi_address_line_1" 
-                                       value="${ci.pi_address_line_1 || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('contactInfo', 'pi_address_line_1', this.value)" required>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 mb-2">Address Line 2</label>
-                                <input type="text" name="pi_address_line_2" 
-                                       value="${ci.pi_address_line_2 || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('contactInfo', 'pi_address_line_2', this.value)">
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-gray-700 mb-2">City *</label>
-                                    <input type="text" name="pi_address_city" 
-                                           value="${ci.pi_address_city || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_address_city', this.value)" required>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">State *</label>
-                                    <input type="text" name="pi_address_state" 
-                                           value="${ci.pi_address_state || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_address_state', this.value)" required>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Zip Code *</label>
-                                    <input type="text" name="pi_address_zip_code" 
-                                           value="${ci.pi_address_zip_code || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_address_zip_code', this.value)" required>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 mb-2">Country *</label>
-                                <select name="pi_address_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        onchange="updateApplicantData('contactInfo', 'pi_address_country', this.value)" required>
-                                    <option value="">Select Country</option>
-                                    <option value="USA" ${(ci.pi_address_country === 'USA') ? 'selected' : ''}>United States</option>
-                                    <option value="UK" ${(ci.pi_address_country === 'UK') ? 'selected' : ''}>United Kingdom</option>
-                                    <option value="BD" ${(ci.pi_address_country === 'BD') ? 'selected' : ''}>Bangladesh</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mailing Address Section -->
-                    <div class="border-t pt-6">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">Mailing Address</h3>
-                        <div class="mb-4">
-                            <label class="block text-gray-700 mb-2">Is your mailing address same as home address?</label>
+                            <label class="block text-gray-700 mb-2">Do you have other name?</label>
                             <div class="flex space-x-4">
                                 <label class="inline-flex items-center">
-                                    <input type="radio" name="is_same_mailing_address" value="1" 
-                                           ${ci.is_same_mailing_address ? 'checked' : ''}
-                                           onchange="toggleConditionalBlock('mailing-address', !this.checked); updateApplicantData('contactInfo', 'is_same_mailing_address', this.checked)">
+                                    <input type="radio" name="pi_have_other_name" value="1" ${pi.pi_have_other_name ? 'checked' : ''} onchange="toggleConditionalBlock('other-name', true); updateApplicantData('passportInfo', 'pi_have_other_name', true)">
                                     <span class="ml-2">Yes</span>
                                 </label>
                                 <label class="inline-flex items-center">
-                                    <input type="radio" name="is_same_mailing_address" value="0" 
-                                           ${!ci.is_same_mailing_address ? 'checked' : ''}
-                                           onchange="toggleConditionalBlock('mailing-address', !this.checked); updateApplicantData('contactInfo', 'is_same_mailing_address', this.checked)">
+                                    <input type="radio" name="pi_have_other_name" value="0" ${!pi.pi_have_other_name ? 'checked' : ''} onchange="toggleConditionalBlock('other-name', false); updateApplicantData('passportInfo', 'pi_have_other_name', false)">
                                     <span class="ml-2">No</span>
                                 </label>
                             </div>
                         </div>
 
-                        <div id="mailing-address" class="conditional-block ${!ci.is_same_mailing_address ? 'active' : ''}">
+                        <!-- Conditional Other Name Fields -->
+                        <div id="other-name" class="conditional-block" style="display: ${pi.pi_have_other_name ? 'block' : 'none'};">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Other Surname</label>
+                                    <input type="text" name="pi_other_sur_name" value="${pi.pi_other_sur_name || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_other_sur_name', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Other Given Name</label>
+                                    <input type="text" name="pi_other_given_name" value="${pi.pi_other_given_name || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_other_given_name', this.value)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gender and Marital Status -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Gender *</label>
+                                <select name="pi_gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_gender', this.value)" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male" ${(pi.pi_gender === 'Male') ? 'selected' : ''}>Male</option>
+                                    <option value="Female" ${(pi.pi_gender === 'Female') ? 'selected' : ''}>Female</option>
+                                    <option value="Other" ${(pi.pi_gender === 'Other') ? 'selected' : ''}>Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Marital Status *</label>
+                                <select name="pi_marital_status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_marital_status', this.value)" required>
+                                    <option value="">Select Marital Status</option>
+                                    <option value="Single" ${(pi.pi_marital_status === 'Single') ? 'selected' : ''}>Single</option>
+                                    <option value="Married" ${(pi.pi_marital_status === 'Married') ? 'selected' : ''}>Married</option>
+                                    <option value="Divorced" ${(pi.pi_marital_status === 'Divorced') ? 'selected' : ''}>Divorced</option>
+                                    <option value="Widowed" ${(pi.pi_marital_status === 'Widowed') ? 'selected' : ''}>Widowed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Date of Birth -->
+                        <div>
+                            <label class="block text-gray-700 mb-2">Date of Birth *</label>
+                            <input type="text" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                value="${pi.pi_dob ? convertToDisplay(pi.pi_dob) : ''}" 
+                                onchange="handleDateChange('passportInfo', 'pi_dob', this.value)"
+                                placeholder="DD/MM/YYYY"
+                                required>
+                        </div>
+
+                        <!-- Place and Country of Birth -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Place of Birth *</label>
+                                <input type="text" name="pi_pob" value="${pi.pi_pob || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_pob', this.value)" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Country of Birth *</label>
+                                <select name="pi_cob" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_cob', this.value)" required>
+                                    <option value="">Select Country</option>
+                                    ${generateCountryOptions(pi.pi_cob)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Home Address Section -->
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Home Address</h3>
                             <div class="grid grid-cols-1 gap-4">
                                 <div>
                                     <label class="block text-gray-700 mb-2">Address Line 1 *</label>
-                                    <input type="text" name="pi_mail_address_line_1" 
-                                           value="${ci.pi_mail_address_line_1 || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_mail_address_line_1', this.value)">
+                                    <input type="text" name="pi_address_line_1" value="${ci.pi_address_line_1 || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_address_line_1', this.value)" required>
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 mb-2">Address Line 2</label>
-                                    <input type="text" name="pi_mail_address_line_2" 
-                                           value="${ci.pi_mail_address_line_2 || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_mail_address_line_2', this.value)">
+                                    <input type="text" name="pi_address_line_2" value="${ci.pi_address_line_2 || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_address_line_2', this.value)">
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label class="block text-gray-700 mb-2">City *</label>
-                                        <input type="text" name="pi_mail_address_city" 
-                                               value="${ci.pi_mail_address_city || ''}" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               onchange="updateApplicantData('contactInfo', 'pi_mail_address_city', this.value)">
+                                        <input type="text" name="pi_address_city" value="${ci.pi_address_city || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_address_city', this.value)" required>
                                     </div>
                                     <div>
                                         <label class="block text-gray-700 mb-2">State *</label>
-                                        <input type="text" name="pi_mail_address_state" 
-                                               value="${ci.pi_mail_address_state || ''}" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               onchange="updateApplicantData('contactInfo', 'pi_mail_address_state', this.value)">
+                                        <input type="text" name="pi_address_state" value="${ci.pi_address_state || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_address_state', this.value)" required>
                                     </div>
                                     <div>
                                         <label class="block text-gray-700 mb-2">Zip Code *</label>
-                                        <input type="text" name="pi_mail_address_zip_code" 
-                                               value="${ci.pi_mail_address_zip_code || ''}" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               onchange="updateApplicantData('contactInfo', 'pi_mail_address_zip_code', this.value)">
+                                        <input type="text" name="pi_address_zip_code" value="${ci.pi_address_zip_code || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_address_zip_code', this.value)" required>
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 mb-2">Country *</label>
-                                    <select name="pi_mail_address_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            onchange="updateApplicantData('contactInfo', 'pi_mail_address_country', this.value)">
+                                    <select name="pi_address_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_address_country', this.value)" required>
                                         <option value="">Select Country</option>
-                                        <option value="USA" ${(ci.pi_mail_address_country === 'USA') ? 'selected' : ''}>United States</option>
-                                        <option value="UK" ${(ci.pi_mail_address_country === 'UK') ? 'selected' : ''}>United Kingdom</option>
-                                        <option value="BD" ${(ci.pi_mail_address_country === 'BD') ? 'selected' : ''}>Bangladesh</option>
+                                        ${generateCountryOptions(ci.pi_address_country)}
                                     </select>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Contact Information -->
-                    <div class="border-t pt-6">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">Contact Information</h3>
-                        
-                        <!-- Phone Numbers -->
-                        <div class="mb-6">
-                            <h4 class="font-medium text-gray-700 mb-3">Phone Numbers</h4>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Primary Phone Number *</label>
-                                    <input type="tel" name="pi_primary_no" 
-                                           value="${ci.pi_primary_no || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_primary_no', this.value)" required>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Secondary Phone Number</label>
-                                    <input type="tel" name="pi_secondary_no" 
-                                           value="${ci.pi_secondary_no || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_secondary_no', this.value)">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Work Phone Number</label>
-                                    <input type="tel" name="pi_work_no" 
-                                           value="${ci.pi_work_no || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('contactInfo', 'pi_work_no', this.value)">
+                        <!-- Mailing Address Section -->
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Mailing Address</h3>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Is your mailing address same as home address?</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="is_same_mailing_address" value="1" ${ci.is_same_mailing_address ? 'checked' : ''} onchange="toggleConditionalBlock('mailing-address', false); updateApplicantData('contactInfo', 'is_same_mailing_address', true)">
+                                        <span class="ml-2">Yes</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="is_same_mailing_address" value="0" ${!ci.is_same_mailing_address ? 'checked' : ''} onchange="toggleConditionalBlock('mailing-address', true); updateApplicantData('contactInfo', 'is_same_mailing_address', false)">
+                                        <span class="ml-2">No</span>
+                                    </label>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Email Addresses -->
-                        <div class="mb-6">
-                            <h4 class="font-medium text-gray-700 mb-3">Email Addresses</h4>
-                            <div id="email-fields">
-                                ${generateEmailFields(ci.emails || [''])}
-                            </div>
-                            <button type="button" onclick="addEmailField()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
-                                <i class="fas fa-plus mr-2"></i> Add Another Email
-                            </button>
-                        </div>
-
-                        <!-- Social Media -->
-                        <div class="mb-6">
-                            <h4 class="font-medium text-gray-700 mb-3">Social Media Profiles</h4>
-                            <div id="social-media-fields">
-                                ${generateSocialMediaFields(ci.socialMedia || [{platform: '', username: ''}])}
-                            </div>
-                            <button type="button" onclick="addSocialMediaField()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
-                                <i class="fas fa-plus mr-2"></i> Add Social Media Profile
-                            </button>
-                        </div>
-
-                        <!-- National ID -->
-                        <div>
-                            <label class="block text-gray-700 mb-2">National ID</label>
-                            <input type="text" name="pi_nid" 
-                                   value="${pi.pi_nid || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pi_nid', this.value)">
-                        </div>
-                    </div>
-
-                    <!-- Other Nationality -->
-                    <div class="border-t pt-6">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">Other Nationality</h3>
-                        <div class="mb-4">
-                            <label class="block text-gray-700 mb-2">Do you have any other nationality?</label>
-                            <div class="flex space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pi_have_other_nationality" value="1" 
-                                           ${pi.pi_have_other_nationality ? 'checked' : ''}
-                                           onchange="toggleConditionalBlock('other-nationality', this.checked); updateApplicantData('passportInfo', 'pi_have_other_nationality', this.checked)">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pi_have_other_nationality" value="0" 
-                                           ${!pi.pi_have_other_nationality ? 'checked' : ''}
-                                           onchange="toggleConditionalBlock('other-nationality', this.checked); updateApplicantData('passportInfo', 'pi_have_other_nationality', this.checked)">
-                                    <span class="ml-2">No</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="other-nationality" class="conditional-block ${pi.pi_have_other_nationality ? 'active' : ''}">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Country</label>
-                                    <select name="pi_other_nationality_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            onchange="updateApplicantData('passportInfo', 'pi_other_nationality_country', this.value)">
-                                        <option value="">Select Country</option>
-                                        <option value="USA" ${(pi.pi_other_nationality_country === 'USA') ? 'selected' : ''}>United States</option>
-                                        <option value="UK" ${(pi.pi_other_nationality_country === 'UK') ? 'selected' : ''}>United Kingdom</option>
-                                        <option value="BD" ${(pi.pi_other_nationality_country === 'BD') ? 'selected' : ''}>Bangladesh</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Do you have that country passport?</label>
-                                    <div class="flex space-x-4">
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" name="pi_have_other_country_paasport" value="1" 
-                                                   ${pi.pi_have_other_country_paasport ? 'checked' : ''}
-                                                   onchange="toggleConditionalBlock('other-passport', this.checked); updateApplicantData('passportInfo', 'pi_have_other_country_paasport', this.checked)">
-                                            <span class="ml-2">Yes</span>
-                                        </label>
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" name="pi_have_other_country_paasport" value="0" 
-                                                   ${!pi.pi_have_other_country_paasport ? 'checked' : ''}
-                                                   onchange="toggleConditionalBlock('other-passport', this.checked); updateApplicantData('passportInfo', 'pi_have_other_country_paasport', this.checked)">
-                                            <span class="ml-2">No</span>
-                                        </label>
+                            <div id="mailing-address" class="conditional-block" style="display: ${!ci.is_same_mailing_address ? 'block' : 'none'};">
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Address Line 1 *</label>
+                                        <input type="text" name="pi_mail_address_line_1" value="${ci.pi_mail_address_line_1 || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_mail_address_line_1', this.value)">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Address Line 2</label>
+                                        <input type="text" name="pi_mail_address_line_2" value="${ci.pi_mail_address_line_2 || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_mail_address_line_2', this.value)">
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-gray-700 mb-2">City *</label>
+                                            <input type="text" name="pi_mail_address_city" value="${ci.pi_mail_address_city || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_mail_address_city', this.value)">
+                                        </div>
+                                        <div>
+                                            <label class="block text-gray-700 mb-2">State *</label>
+                                            <input type="text" name="pi_mail_address_state" value="${ci.pi_mail_address_state || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_mail_address_state', this.value)">
+                                        </div>
+                                        <div>
+                                            <label class="block text-gray-700 mb-2">Zip Code *</label>
+                                            <input type="text" name="pi_mail_address_zip_code" value="${ci.pi_mail_address_zip_code || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_mail_address_zip_code', this.value)">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Country *</label>
+                                        <select name="pi_mail_address_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_mail_address_country', this.value)">
+                                            <option value="">Select Country</option>
+                                            ${generateCountryOptions(ci.pi_mail_address_country)}
+                                        </select>
                                     </div>
                                 </div>
-                                <div id="other-passport" class="conditional-block ${pi.pi_have_other_country_paasport ? 'active' : ''}">
-                                    <label class="block text-gray-700 mb-2">Passport Number</label>
-                                    <input type="text" name="pi_other_country_passport" 
-                                           value="${pi.pi_other_country_passport || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('passportInfo', 'pi_other_country_passport', this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Contact Information</h3>
+                            
+                            <!-- Phone Numbers -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-700 mb-3">Phone Numbers</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Primary Phone Number *</label>
+                                        <input type="tel" name="pi_primary_no" value="${ci.pi_primary_no || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_primary_no', this.value)" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Secondary Phone Number</label>
+                                        <input type="tel" name="pi_secondary_no" value="${ci.pi_secondary_no || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_secondary_no', this.value)">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Work Phone Number</label>
+                                        <input type="tel" name="pi_work_no" value="${ci.pi_work_no || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('contactInfo', 'pi_work_no', this.value)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Other Phone Numbers (Multi-entry JSON type) -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-700 mb-3">Other Phone Numbers</h4>
+                                <div id="other-phone-fields">
+                                    ${generateOtherPhoneFields(ci.otherPhones || [''])}
+                                </div>
+                                <button type="button" onclick="addOtherPhoneField()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                                    <i class="fas fa-plus mr-2"></i> Add Another Phone Number
+                                </button>
+                            </div>
+
+                            <!-- Email Addresses (Multi-entry JSON type) -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-700 mb-3">Email Addresses</h4>
+                                <div id="email-fields">
+                                    ${generateEmailFields(ci.emails || [''])}
+                                </div>
+                                <button type="button" onclick="addEmailField()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                                    <i class="fas fa-plus mr-2"></i> Add Another Email
+                                </button>
+                            </div>
+
+                            <!-- Social Media Section in the main form -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-700 mb-3">Social Media Profiles</h4>
+                                <div id="social-media-fields">
+                                    ${generateSocialMediaFields(ci.socialMedia || [{platform: '', username: ''}])}
+                                </div>
+                                <button type="button" onclick="addSocialMediaField()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                                    <i class="fas fa-plus mr-2"></i> Add Social Media Profile
+                                </button>
+                            </div>
+
+                            <!-- National ID -->
+                            <div>
+                                <label class="block text-gray-700 mb-2">National ID</label>
+                                <input type="text" name="pi_nid" value="${pi.pi_nid || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_nid', this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Other Nationality -->
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Other Nationality</h3>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Do you have any other nationality?</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pi_have_other_nationality" value="1" ${pi.pi_have_other_nationality ? 'checked' : ''} onchange="toggleConditionalBlock('other-nationality', true); updateApplicantData('passportInfo', 'pi_have_other_nationality', true)">
+                                        <span class="ml-2">Yes</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pi_have_other_nationality" value="0" ${!pi.pi_have_other_nationality ? 'checked' : ''} onchange="toggleConditionalBlock('other-nationality', false); updateApplicantData('passportInfo', 'pi_have_other_nationality', false)">
+                                        <span class="ml-2">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="other-nationality" class="conditional-block" style="display: ${pi.pi_have_other_nationality ? 'block' : 'none'};">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Country</label>
+                                        <select name="pi_other_nationality_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_other_nationality_country', this.value)">
+                                            <option value="">Select Country</option>
+                                            ${generateCountryOptions(pi.pi_other_nationality_country)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Do you have that country passport?</label>
+                                        <div class="flex space-x-4">
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="pi_have_other_country_paasport" value="1" ${pi.pi_have_other_country_paasport ? 'checked' : ''} onchange="toggleConditionalBlock('other-passport', true); updateApplicantData('passportInfo', 'pi_have_other_country_paasport', true)">
+                                                <span class="ml-2">Yes</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="pi_have_other_country_paasport" value="0" ${!pi.pi_have_other_country_paasport ? 'checked' : ''} onchange="toggleConditionalBlock('other-passport', false); updateApplicantData('passportInfo', 'pi_have_other_country_paasport', false)">
+                                                <span class="ml-2">No</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div id="other-passport" class="conditional-block" style="display: ${pi.pi_have_other_country_paasport ? 'block' : 'none'};">
+                                        <label class="block text-gray-700 mb-2">Passport Number</label>
+                                        <input type="text" name="pi_other_country_passport" value="${pi.pi_other_country_passport || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_other_country_passport', this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Other Permanent Residence -->
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Other Permanent Residence</h3>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Do you have any other permanent residence?</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pi_have_other_permanent_residence" value="1" ${pi.pi_have_other_permanent_residence ? 'checked' : ''} onchange="toggleConditionalBlock('other-residence', true); updateApplicantData('passportInfo', 'pi_have_other_permanent_residence', true)">
+                                        <span class="ml-2">Yes</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pi_have_other_permanent_residence" value="0" ${!pi.pi_have_other_permanent_residence ? 'checked' : ''} onchange="toggleConditionalBlock('other-residence', false); updateApplicantData('passportInfo', 'pi_have_other_permanent_residence', false)">
+                                        <span class="ml-2">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="other-residence" class="conditional-block" style="display: ${pi.pi_have_other_permanent_residence ? 'block' : 'none'};">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Country</label>
+                                    <select name="pi_other_permanent_residence_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateApplicantData('passportInfo', 'pi_other_permanent_residence_country', this.value)">
+                                        <option value="">Select Country</option>
+                                        ${generateCountryOptions(pi.pi_other_permanent_residence_country)}
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <p class="text-sm text-gray-500 mt-4">* Required fields</p>
+                    `;
+        }
 
-                    <!-- Other Permanent Residence -->
-                    <div class="border-t pt-6">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">Other Permanent Residence</h3>
-                        <div class="mb-4">
-                            <label class="block text-gray-700 mb-2">Do you have any other permanent residence?</label>
-                            <div class="flex space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pi_have_other_permanent_residence" value="1" 
-                                           ${pi.pi_have_other_permanent_residence ? 'checked' : ''}
-                                           onchange="toggleConditionalBlock('other-residence', this.checked); updateApplicantData('passportInfo', 'pi_have_other_permanent_residence', this.checked)">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pi_have_other_permanent_residence" value="0" 
-                                           ${!pi.pi_have_other_permanent_residence ? 'checked' : ''}
-                                           onchange="toggleConditionalBlock('other-residence', this.checked); updateApplicantData('passportInfo', 'pi_have_other_permanent_residence', this.checked)">
-                                    <span class="ml-2">No</span>
-                                </label>
-                            </div>
-                        </div>
+        // Helper function for Other Phone Numbers (multi-entry JSON type)
+        function generateOtherPhoneFields(phones) {
+            return phones.map((phone, index) => `
+                <div class="other-phone-field flex items-center space-x-2 mb-2">
+                    <input type="tel" name="pi_other_no[]" value="${phone}" 
+                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                        placeholder="Other phone number" 
+                        onchange="updateOtherPhoneData(${index}, this.value)">
+                    ${index > 0 ? `
+                        <button type="button" onclick="removeOtherPhoneField(${index})" class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
 
-                        <div id="other-residence" class="conditional-block ${pi.pi_have_other_permanent_residence ? 'active' : ''}">
-                            <div>
-                                <label class="block text-gray-700 mb-2">Country</label>
-                                <select name="pi_other_permanent_residence_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        onchange="updateApplicantData('passportInfo', 'pi_other_permanent_residence_country', this.value)">
-                                    <option value="">Select Country</option>
-                                    <option value="USA" ${(pi.pi_other_permanent_residence_country === 'USA') ? 'selected' : ''}>United States</option>
-                                    <option value="UK" ${(pi.pi_other_permanent_residence_country === 'UK') ? 'selected' : ''}>United Kingdom</option>
-                                    <option value="BD" ${(pi.pi_other_permanent_residence_country === 'BD') ? 'selected' : ''}>Bangladesh</option>
-                                </select>
-                            </div>
+        function addOtherPhoneField() {
+            const container = document.getElementById('other-phone-fields');
+            const index = container.children.length;
+            const newField = document.createElement('div');
+            newField.className = 'other-phone-field flex items-center space-x-2 mb-2';
+            newField.innerHTML = `
+                <input type="tel" name="pi_other_no[]" 
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    placeholder="Other phone number" 
+                    onchange="updateOtherPhoneData(${index}, this.value)">
+                <button type="button" onclick="removeOtherPhoneField(${index})" class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(newField);
+        }
+
+        function removeOtherPhoneField(index) {
+            const field = document.querySelector(`.other-phone-field:nth-child(${index + 1})`);
+            if (field) {
+                field.remove();
+                // Update the data structure after removal
+                updateOtherPhonesData();
+            }
+        }
+
+        function updateOtherPhoneData(index, value) {
+            if (!currentApplicant.contactInfo.otherPhones) {
+                currentApplicant.contactInfo.otherPhones = [];
+            }
+            currentApplicant.contactInfo.otherPhones[index] = value;
+        }
+
+        function updateOtherPhonesData() {
+            const inputs = document.querySelectorAll('input[name="pi_other_no[]"]');
+            currentApplicant.contactInfo.otherPhones = Array.from(inputs).map(input => input.value);
+        }
+
+        // Updated Social Media functions with dropdown
+        function generateSocialMediaFields(socialMedias) {
+            return socialMedias.map((social, index) => `
+                <div class="social-media-field grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Platform *</label>
+                        <select name="social_platform[]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateSocialMediaData(${index}, 'platform', this.value)" required>
+                            <option value="">Select Platform</option>
+                            ${socialMediaPlatforms.map(platform => 
+                                `<option value="${platform}" ${(social.platform === platform) ? 'selected' : ''}>${platform}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <div class="flex-1">
+                            <label class="block text-gray-700 mb-2">Username/URL *</label>
+                            <input type="text" name="social_username[]" value="${social.username || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Username or URL" 
+                                onchange="updateSocialMediaData(${index}, 'username', this.value)"
+                                required>
                         </div>
+                        ${index > 0 ? `
+                            <button type="button" onclick="removeSocialMediaField(${index})" class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg mb-2">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
-                <p class="text-sm text-gray-500 mt-4">* Required fields</p>
+            `).join('');
+        }
+
+        function addSocialMediaField() {
+            const container = document.getElementById('social-media-fields');
+            const index = container.children.length;
+            const newField = document.createElement('div');
+            newField.className = 'social-media-field grid grid-cols-1 md:grid-cols-2 gap-4 mb-4';
+            newField.innerHTML = `
+                <div>
+                    <label class="block text-gray-700 mb-2">Platform *</label>
+                    <select name="social_platform[]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updateSocialMediaData(${index}, 'platform', this.value)" required>
+                        <option value="">Select Platform</option>
+                        ${socialMediaPlatforms.map(platform => 
+                            `<option value="${platform}">${platform}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="flex items-end space-x-2">
+                    <div class="flex-1">
+                        <label class="block text-gray-700 mb-2">Username/URL *</label>
+                        <input type="text" name="social_username[]" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                            placeholder="Username or URL" 
+                            onchange="updateSocialMediaData(${index}, 'username', this.value)"
+                            required>
+                    </div>
+                    <button type="button" onclick="removeSocialMediaField(${index})" class="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg mb-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             `;
+            container.appendChild(newField);
+        }
+
+        function removeSocialMediaField(index) {
+            const field = document.querySelector(`.social-media-field:nth-child(${index + 1})`);
+            if (field) {
+                field.remove();
+                updateSocialMediaData();
+            }
+        }
+
+        function updateSocialMediaData(index, field, value) {
+            if (!currentApplicant.contactInfo.socialMedia) {
+                currentApplicant.contactInfo.socialMedia = [];
+            }
+            if (!currentApplicant.contactInfo.socialMedia[index]) {
+                currentApplicant.contactInfo.socialMedia[index] = {
+                    platform: '',
+                    username: ''
+                };
+            }
+            if (field) {
+                currentApplicant.contactInfo.socialMedia[index][field] = value;
+            }
         }
 
         // Travel Information Step (Based on Excel TI section)
@@ -814,21 +1083,21 @@ if ($pnr) {
                 state: '',
                 zip_code: ''
             }];
-            
+
             return `
                 <div class="space-y-6">
                     <div>
                         <label class="block text-gray-700 mb-2">Purpose of Travel *</label>
                         <input type="text" name="ti_travel_purpose" 
-                               value="${ti.ti_travel_purpose || ''}" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                               onchange="updateApplicantData('travelInfo', 'ti_travel_purpose', this.value)" required>
+                            value="${ti.ti_travel_purpose || ''}" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="updateApplicantData('travelInfo', 'ti_travel_purpose', this.value)" required>
                     </div>
 
                     <div>
                         <label class="block text-gray-700 mb-2">Have you made travel plans?</label>
                         <select name="ti_have_travel_plan" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                onchange="toggleTravelPlanFields(this.value); updateApplicantData('travelInfo', 'ti_have_travel_plan', this.value)">
+                                onchange="handleTravelPlanChange(this.value); updateApplicantData('travelInfo', 'ti_have_travel_plan', this.value)">
                             <option value="">Select</option>
                             <option value="yes" ${(ti.ti_have_travel_plan === 'yes') ? 'selected' : ''}>Yes</option>
                             <option value="no" ${(ti.ti_have_travel_plan === 'no') ? 'selected' : ''}>No</option>
@@ -836,21 +1105,24 @@ if ($pnr) {
                     </div>
 
                     <!-- No Travel Plan Fields -->
-                    <div id="no-travel-plan" class="conditional-block ${ti.ti_have_travel_plan === 'no' ? 'active' : ''}">
+                    <div id="no-travel-plan" class="conditional-block" style="display: ${ti.ti_have_travel_plan === 'no' ? 'block' : 'none'};">
+                        <!-- ... no travel plan fields content ... -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-gray-700 mb-2">Intended date of arrival</label>
-                                <input type="date" name="ti_intended_arrival_date" 
-                                       value="${ti.ti_intended_arrival_date || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_intended_arrival_date', this.value)">
+                                <input type="text" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    value="${ti.ti_intended_arrival_date ? convertToDisplay(ti.ti_intended_arrival_date) : ''}" 
+                                    onchange="handleDateChange('travelInfo', 'ti_intended_arrival_date', this.value)"
+                                    placeholder="DD/MM/YYYY"
+                                    required>
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Length of stay</label>
                                 <input type="text" name="ti_stay_length" 
-                                       value="${ti.ti_stay_length || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_stay_length', this.value)">
+                                    value="${ti.ti_stay_length || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_stay_length', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Number + Select Option (Day, Month, Year)</label>
@@ -866,49 +1138,54 @@ if ($pnr) {
                     </div>
 
                     <!-- Yes Travel Plan Fields -->
-                    <div id="yes-travel-plan" class="conditional-block ${ti.ti_have_travel_plan === 'yes' ? 'active' : ''}">
+                    <div id="yes-travel-plan" class="conditional-block" style="display: ${ti.ti_have_travel_plan === 'yes' ? 'block' : 'none'};">
+                        <!-- ... yes travel plan fields content ... -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-gray-700 mb-2">Date of Arrival in the USA</label>
-                                <input type="date" name="ti_arrival_date" 
-                                       value="${ti.ti_arrival_date || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_arrival_date', this.value)">
+                                <input type="text" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    value="${ti.ti_arrival_date ? convertToDisplay(ti.ti_arrival_date) : ''}" 
+                                    onchange="handleDateChange('travelInfo', 'ti_arrival_date', this.value)"
+                                    placeholder="DD/MM/YYYY"
+                                    required>
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Arrival Flight Number</label>
                                 <input type="text" name="ti_arrival_flight_no" 
-                                       value="${ti.ti_arrival_flight_no || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_arrival_flight_no', this.value)">
+                                    value="${ti.ti_arrival_flight_no || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_arrival_flight_no', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Arrival City</label>
                                 <input type="text" name="ti_arrival_city" 
-                                       value="${ti.ti_arrival_city || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_arrival_city', this.value)">
+                                    value="${ti.ti_arrival_city || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_arrival_city', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Date of Departure</label>
-                                <input type="date" name="ti_departure_date" 
-                                       value="${ti.ti_departure_date || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_departure_date', this.value)">
+                                <input type="text" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    value="${ti.ti_departure_date ? convertToDisplay(ti.ti_departure_date) : ''}" 
+                                    onchange="handleDateChange('travelInfo', 'ti_departure_date', this.value)"
+                                    placeholder="DD/MM/YYYY"
+                                    required>
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Departure Flight Number</label>
                                 <input type="text" name="ti_departure_flight_no" 
-                                       value="${ti.ti_departure_flight_no || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_departure_flight_no', this.value)">
+                                    value="${ti.ti_departure_flight_no || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_departure_flight_no', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Departure City</label>
                                 <input type="text" name="ti_departure_city" 
-                                       value="${ti.ti_departure_city || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('travelInfo', 'ti_departure_city', this.value)">
+                                    value="${ti.ti_departure_city || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_departure_city', this.value)">
                             </div>
                         </div>
                     </div>
@@ -927,7 +1204,7 @@ if ($pnr) {
                     <div>
                         <label class="block text-gray-700 mb-2">Who is paying for your trip?</label>
                         <select name="trip_payment" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                onchange="updateApplicantData('travelInfo', 'trip_payment', this.value)">
+                                onchange="handlePaymentChange(this.value); updateApplicantData('travelInfo', 'trip_payment', this.value)">
                             <option value="">Select</option>
                             <option value="Self" ${(ti.trip_payment === 'Self') ? 'selected' : ''}>Self</option>
                             <option value="Other person" ${(ti.trip_payment === 'Other person') ? 'selected' : ''}>Other person</option>
@@ -936,14 +1213,249 @@ if ($pnr) {
                             <option value="Other Company" ${(ti.trip_payment === 'Other Company') ? 'selected' : ''}>Other Company</option>
                         </select>
                     </div>
+
+                    <!-- Payment Fields for Other Person / Others- -->
+                    <div id="other-person-payment" class="conditional-block" style="display: ${(ti.trip_payment === 'Other person') ? 'block' : 'none'};">
+                        <!-- ... other person payment fields content ... -->
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Paying Person Details</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Surname of Paying Person</label>
+                                <input type="text" name="trip_paying_person_surname" 
+                                    value="${ti.trip_paying_person_surname || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'trip_paying_person_surname', this.value)">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Given Name of Paying Person</label>
+                                <input type="text" name="ti_trip_paying_person_given_name" 
+                                    value="${ti.ti_trip_paying_person_given_name || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_given_name', this.value)">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Telephone of Paying Person</label>
+                                <input type="tel" name="ti_trip_paying_person_telephone" 
+                                    value="${ti.ti_trip_paying_person_telephone || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_telephone', this.value)">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-2">Email of Paying Person</label>
+                                <input type="email" name="ti_trip_paying_person_email" 
+                                    value="${ti.ti_trip_paying_person_email || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_email', this.value)">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 mb-2">Relationship to Paying Person</label>
+                                <input type="text" name="_trip_paying_person_relationship" 
+                                    value="${ti._trip_paying_person_relationship || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelInfo', '_trip_paying_person_relationship', this.value)">
+                            </div>
+                        </div>
+
+
+                        <!-- Address Toggle for Paying Person -->
+                        <div class="mt-4">
+                            <label class="block text-gray-700 mb-2">Is the address of paying person same as yours?</label>
+                            <div class="flex space-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="trip_paying_person_have_same_address" value="1" ${ti.trip_paying_person_have_same_address ? 'checked' : ''} onchange="toggleConditionalBlock('paying-person-address', false); updateApplicantData('travelInfo', 'trip_paying_person_have_same_address', true)">
+                                    <span class="ml-2">Yes</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="trip_paying_person_have_same_address" value="0" ${!ti.trip_paying_person_have_same_address ? 'checked' : ''} onchange="toggleConditionalBlock('paying-person-address', true); updateApplicantData('travelInfo', 'trip_paying_person_have_same_address', false)">
+                                    <span class="ml-2">No</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Conditional Address Block for Paying Person -->
+                        <div id="paying-person-address" class="conditional-block mt-4" style="display: ${!ti.trip_paying_person_have_same_address ? 'block' : 'none'};">
+                            <!-- ... paying person address fields ... -->
+                            <div class="border-t pt-6">
+                                <!-- Conditional Address Block for Paying Person -->
+                                <div id="paying-person-address" class="conditional-block mt-4" style="display: ${!ti.trip_paying_person_have_same_address ? 'block' : 'none'};">
+                                    <div class="grid grid-cols-1 gap-4">
+                                        <div>
+                                            <label class="block text-gray-700 mb-2">Address Line 1</label>
+                                            <input type="text" name="ti_trip_paying_person_address_line_1" 
+                                                value="${ti.ti_trip_paying_person_address_line_1 || ''}" 
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_address_line_1', this.value)">
+                                        </div>
+                                        <div>
+                                            <label class="block text-gray-700 mb-2">Address Line 2</label>
+                                            <input type="text" name="ti_trip_paying_person_address_line_2" 
+                                                value="${ti.ti_trip_paying_person_address_line_2 || ''}" 
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_address_line_2', this.value)">
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <label class="block text-gray-700 mb-2">City</label>
+                                                <input type="text" name="ti_trip_paying_person_address_city" 
+                                                    value="${ti.ti_trip_paying_person_address_city || ''}" 
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_address_city', this.value)">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 mb-2">State</label>
+                                                <input type="text" name="ti_trip_paying_person_address_state" 
+                                                    value="${ti.ti_trip_paying_person_address_state || ''}" 
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_address_state', this.value)">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 mb-2">Zip Code</label>
+                                                <input type="text" name="ti_trip_paying_person_address_zip_code" 
+                                                    value="${ti.ti_trip_paying_person_address_zip_code || ''}" 
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    onchange="updateApplicantData('travelInfo', 'ti_trip_paying_person_address_zip_code', this.value)">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-gray-700 mb-2">Country</label>
+                                            <select name="trip_paying_person_address_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    onchange="updateApplicantData('travelInfo', 'trip_paying_person_address_country', this.value)">
+                                                <option value="">Select Country</option>
+                                                ${countries.map(country => 
+                                                    `<option value="${country.code}" ${(ti.trip_paying_person_address_country === country.code) ? 'selected' : ''}>${country.name}</option>`
+                                                ).join('')}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Fields for Other Company -->
+                    <div id="other-company-payment" class="conditional-block" style="display: ${ti.trip_payment === 'Other Company' ? 'block' : 'none'};">
+                        <!-- ... other company payment fields content ... -->
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Other Company Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Company Name</label>
+                                    <input type="text" name="ti_trip_paying_company_name" 
+                                        value="${ti.ti_trip_paying_company_name || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_name', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Company Telephone</label>
+                                    <input type="tel" name="ti_trip_paying_company_telephone" 
+                                        value="${ti.ti_trip_paying_company_telephone || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_telephone', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Company Email</label>
+                                    <input type="email" name="ti_trip_paying_company_email" 
+                                        value="${ti.ti_trip_paying_company_email || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_email', this.value)">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 mb-2">Relationship to Company</label>
+                                    <input type="text" name="ti_trip_paying_company_relationship" 
+                                        value="${ti.ti_trip_paying_company_relationship || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_relationship', this.value)">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Address Line 1</label>
+                                    <input type="text" name="ti_trip_paying_company_address_line_1" 
+                                        value="${ti.ti_trip_paying_company_address_line_1 || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_address_line_1', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Address Line 2</label>
+                                    <input type="text" name="ti_trip_paying_company_address_line_2" 
+                                        value="${ti.ti_trip_paying_company_address_line_2 || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_address_line_2', this.value)">
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">City</label>
+                                        <input type="text" name="ti_trip_paying_company_address_city" 
+                                            value="${ti.ti_trip_paying_company_address_city || ''}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_address_city', this.value)">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">State</label>
+                                        <input type="text" name="ti_trip_paying_company_address_state" 
+                                            value="${ti.ti_trip_paying_company_address_state || ''}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_address_state', this.value)">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 mb-2">Zip Code</label>
+                                        <input type="text" name="ti_trip_paying_company_address_zip_code" 
+                                            value="${ti.ti_trip_paying_company_address_zip_code || ''}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_address_zip_code', this.value)">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 mb-2">Country</label>
+                                    <select name="ti_trip_paying_company_address_country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('travelInfo', 'ti_trip_paying_company_address_country', this.value)">
+                                        <option value="">Select Country</option>
+                                        ${countries.map(country => 
+                                            `<option value="${country.code}" ${(ti.ti_trip_paying_company_address_country === country.code) ? 'selected' : ''}>${country.name}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
 
+        // Simplified Helper Functions using toggleConditionalBlock
+        function handleTravelPlanChange(value) {
+            toggleConditionalBlock('no-travel-plan', value === 'no');
+            toggleConditionalBlock('yes-travel-plan', value === 'yes');
+        }
+
+        function handlePaymentChange(value) {
+            const showOtherPerson = (value === 'Other person' || value === 'Others-');
+            const showOtherCompany = (value === 'Other Company');
+
+            toggleConditionalBlock('other-person-payment', showOtherPerson);
+            toggleConditionalBlock('other-company-payment', showOtherCompany);
+        }
+
+        // Initialize function to set initial states
+        function initializeTravelStep() {
+            const travelPlanSelect = document.querySelector('select[name="ti_have_travel_plan"]');
+            const paymentSelect = document.querySelector('select[name="trip_payment"]');
+
+            if (travelPlanSelect) {
+                handleTravelPlanChange(travelPlanSelect.value);
+            }
+            if (paymentSelect) {
+                handlePaymentChange(paymentSelect.value);
+            }
+        }
+
+        // Call initialize when the step is loaded
+        // You can call this function after generating the travel info step
+
         // Passport Information Step (Based on Excel PP section)
         function generatePassportInfoStep(applicant) {
             const pp = applicant.passportInfo || {};
-            
+
             return `
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -960,26 +1472,30 @@ if ($pnr) {
                         <div>
                             <label class="block text-gray-700 mb-2">Passport Number *</label>
                             <input type="text" name="pp_number" 
-                                   value="${pp.pp_number || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pp_number', this.value)" required>
+                                value="${pp.pp_number || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateApplicantData('passportInfo', 'pp_number', this.value)" required>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-gray-700 mb-2">Passport Issued Date *</label>
-                            <input type="date" name="pp_issue_date" 
-                                   value="${pp.pp_issue_date || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pp_issue_date', this.value)" required>
+                            <input type="text" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                value="${pp.pp_issue_date ? convertToDisplay(pp.pp_issue_date) : ''}" 
+                                onchange="handleDateChange('passportInfo', 'pp_issue_date', this.value)"
+                                placeholder="DD/MM/YYYY"
+                                required>
                         </div>
                         <div>
-                            <label class="block text-gray-700 mb-2">Passport Expiry Date *</label>
-                            <input type="date" name="pp_expiry_date" 
-                                   value="${pp.pp_expiry_date || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pp_expiry_date', this.value)" required>
+                        <label class="block text-gray-700 mb-2">Passport Expiry Date *</label>
+                            <input type="text" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                value="${pp.pp_expiry_date ? convertToDisplay(pp.pp_expiry_date) : ''}" 
+                                onchange="handleDateChange('passportInfo', 'pp_expiry_date', this.value)"
+                                placeholder="DD/MM/YYYY"
+                                required>
                         </div>
                     </div>
 
@@ -987,16 +1503,16 @@ if ($pnr) {
                         <div>
                             <label class="block text-gray-700 mb-2">Passport Issuing Authority *</label>
                             <input type="text" name="pp_issuing_authority" 
-                                   value="${pp.pp_issuing_authority || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pp_issuing_authority', this.value)" required>
+                                value="${pp.pp_issuing_authority || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateApplicantData('passportInfo', 'pp_issuing_authority', this.value)" required>
                         </div>
                         <div>
                             <label class="block text-gray-700 mb-2">Passport Issued City *</label>
                             <input type="text" name="pp_issued_city" 
-                                   value="${pp.pp_issued_city || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateApplicantData('passportInfo', 'pp_issued_city', this.value)" required>
+                                value="${pp.pp_issued_city || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateApplicantData('passportInfo', 'pp_issued_city', this.value)" required>
                         </div>
                     </div>
 
@@ -1005,40 +1521,40 @@ if ($pnr) {
                         <div class="flex space-x-4">
                             <label class="inline-flex items-center">
                                 <input type="radio" name="pp_have_stolen" value="1" 
-                                       ${pp.pp_have_stolen ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('lost-passport', this.checked); updateApplicantData('passportInfo', 'pp_have_stolen', this.checked)">
+                                    ${pp.pp_have_stolen ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('lost-passport', true); updateApplicantData('passportInfo', 'pp_have_stolen', true)">
                                 <span class="ml-2">Yes</span>
                             </label>
                             <label class="inline-flex items-center">
                                 <input type="radio" name="pp_have_stolen" value="0" 
-                                       ${!pp.pp_have_stolen ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('lost-passport', this.checked); updateApplicantData('passportInfo', 'pp_have_stolen', this.checked)">
+                                    ${!pp.pp_have_stolen ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('lost-passport', false); updateApplicantData('passportInfo', 'pp_have_stolen', false)">
                                 <span class="ml-2">No</span>
                             </label>
                         </div>
                     </div>
 
-                    <div id="lost-passport" class="conditional-block ${pp.pp_have_stolen ? 'active' : ''}">
+                    <div id="lost-passport" class="conditional-block" style="display: ${pp.pp_have_stolen ? 'block' : 'none'};">
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-gray-700 mb-2">Passport Number</label>
                                 <input type="text" name="pp_lost_passport_no" 
-                                       value="${pp.pp_lost_passport_no || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('passportInfo', 'pp_lost_passport_no', this.value)">
+                                    value="${pp.pp_lost_passport_no || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('passportInfo', 'pp_lost_passport_no', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Issuing Authority</label>
                                 <input type="text" name="pp_lost_passport_authority" 
-                                       value="${pp.pp_lost_passport_authority || ''}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       onchange="updateApplicantData('passportInfo', 'pp_lost_passport_authority', this.value)">
+                                    value="${pp.pp_lost_passport_authority || ''}" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('passportInfo', 'pp_lost_passport_authority', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">Explanation</label>
                                 <textarea name="pp_lost_passport_explanation" 
-                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                          onchange="updateApplicantData('passportInfo', 'pp_lost_passport_explanation', this.value)">${pp.pp_lost_passport_explanation || ''}</textarea>
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('passportInfo', 'pp_lost_passport_explanation', this.value)">${pp.pp_lost_passport_explanation || ''}</textarea>
                             </div>
                         </div>
                     </div>
@@ -1049,7 +1565,7 @@ if ($pnr) {
         // Travel Companion Information Step (Based on Excel TCI section)
         function generateTravelCompanionStep(applicant) {
             const tci = applicant.travelInfo || {};
-            
+
             return `
                 <div class="space-y-6">
                     <div>
@@ -1057,20 +1573,20 @@ if ($pnr) {
                         <div class="flex space-x-4">
                             <label class="inline-flex items-center">
                                 <input type="radio" name="tci_have_anyone" value="1" 
-                                       ${tci.tci_have_anyone ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('travel-companion', this.checked); updateApplicantData('travelInfo', 'tci_have_anyone', this.checked)">
+                                    ${tci.tci_have_anyone ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('travel-companion', true); updateApplicantData('travelInfo', 'tci_have_anyone', true)">
                                 <span class="ml-2">Yes</span>
                             </label>
                             <label class="inline-flex items-center">
                                 <input type="radio" name="tci_have_anyone" value="0" 
-                                       ${!tci.tci_have_anyone ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('travel-companion', this.checked); updateApplicantData('travelInfo', 'tci_have_anyone', this.checked)">
+                                    ${!tci.tci_have_anyone ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('travel-companion', false); updateApplicantData('travelInfo', 'tci_have_anyone', false)">
                                 <span class="ml-2">No</span>
                             </label>
                         </div>
                     </div>
 
-                    <div id="travel-companion" class="conditional-block ${tci.tci_have_anyone ? 'active' : ''}">
+                    <div id="travel-companion" class="conditional-block" style="display: ${tci.tci_have_anyone ? 'block' : 'none'};">
                         <div class="space-y-6">
                             <h4 class="text-lg font-medium text-gray-800">Travel Companion Details</h4>
                             
@@ -1080,23 +1596,23 @@ if ($pnr) {
                                     <div>
                                         <label class="block text-gray-700 mb-2">Surname</label>
                                         <input type="text" name="tci_surname" 
-                                               value="${tci.tci_surname || ''}" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               onchange="updateApplicantData('travelInfo', 'tci_surname', this.value)">
+                                            value="${tci.tci_surname || ''}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('travelInfo', 'tci_surname', this.value)">
                                     </div>
                                     <div>
                                         <label class="block text-gray-700 mb-2">Given name</label>
                                         <input type="text" name="tci_given_name" 
-                                               value="${tci.tci_given_name || ''}" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               onchange="updateApplicantData('travelInfo', 'tci_given_name', this.value)">
+                                            value="${tci.tci_given_name || ''}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('travelInfo', 'tci_given_name', this.value)">
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="block text-gray-700 mb-2">Relationship to You</label>
                                         <input type="text" name="tci_relationship" 
-                                               value="${tci.tci_relationship || ''}" 
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               onchange="updateApplicantData('travelInfo', 'tci_relationship', this.value)">
+                                            value="${tci.tci_relationship || ''}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            onchange="updateApplicantData('travelInfo', 'tci_relationship', this.value)">
                                     </div>
                                 </div>
                             </div>
@@ -1106,26 +1622,26 @@ if ($pnr) {
                                 <div class="flex space-x-4">
                                     <label class="inline-flex items-center">
                                         <input type="radio" name="tci_have_group" value="1" 
-                                               ${tci.tci_have_group ? 'checked' : ''}
-                                               onchange="toggleConditionalBlock('group-travel', this.checked); updateApplicantData('travelInfo', 'tci_have_group', this.checked)">
+                                            ${tci.tci_have_group ? 'checked' : ''}
+                                            onchange="toggleConditionalBlock('group-travel', true); updateApplicantData('travelInfo', 'tci_have_group', true)">
                                         <span class="ml-2">Yes</span>
                                     </label>
                                     <label class="inline-flex items-center">
                                         <input type="radio" name="tci_have_group" value="0" 
-                                               ${!tci.tci_have_group ? 'checked' : ''}
-                                               onchange="toggleConditionalBlock('group-travel', this.checked); updateApplicantData('travelInfo', 'tci_have_group', this.checked)">
+                                            ${!tci.tci_have_group ? 'checked' : ''}
+                                            onchange="toggleConditionalBlock('group-travel', false); updateApplicantData('travelInfo', 'tci_have_group', false)">
                                         <span class="ml-2">No</span>
                                     </label>
                                 </div>
                             </div>
 
-                            <div id="group-travel" class="conditional-block ${tci.tci_have_group ? 'active' : ''}">
+                            <div id="group-travel" class="conditional-block" style="display: ${tci.tci_have_group ? 'block' : 'none'};">
                                 <div>
                                     <label class="block text-gray-700 mb-2">Group Name</label>
                                     <input type="text" name="tci_group_name" 
-                                           value="${tci.tci_group_name || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('travelInfo', 'tci_group_name', this.value)">
+                                        value="${tci.tci_group_name || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelInfo', 'tci_group_name', this.value)">
                                 </div>
                             </div>
                         </div>
@@ -1137,7 +1653,15 @@ if ($pnr) {
         // Previous U.S. Travel Step (Based on Excel PUST section)
         function generatePreviousTravelStep(applicant) {
             const pust = applicant.travelHistory || {};
-            
+            const previousTravels = pust.previousTravels || [{
+                arrival_date: '',
+                staying_length: ''
+            }];
+            const driverLicenses = pust.driverLicenses || [{
+                license_no: '',
+                state: ''
+            }];
+
             return `
                 <div class="space-y-6">
                     <div>
@@ -1145,94 +1669,487 @@ if ($pnr) {
                         <div class="flex space-x-4">
                             <label class="inline-flex items-center">
                                 <input type="radio" name="pust_have_ever_issued" value="1" 
-                                       ${pust.pust_have_ever_issued ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('previous-visa', this.checked); updateApplicantData('travelHistory', 'pust_have_ever_issued', this.checked)">
+                                    ${pust.pust_have_ever_issued ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('previous-visa', true); updateApplicantData('travelHistory', 'pust_have_ever_issued', true)">
                                 <span class="ml-2">Yes</span>
                             </label>
                             <label class="inline-flex items-center">
                                 <input type="radio" name="pust_have_ever_issued" value="0" 
-                                       ${!pust.pust_have_ever_issued ? 'checked' : ''}
-                                       onchange="toggleConditionalBlock('previous-visa', this.checked); updateApplicantData('travelHistory', 'pust_have_ever_issued', this.checked)">
+                                    ${!pust.pust_have_ever_issued ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('previous-visa', false); updateApplicantData('travelHistory', 'pust_have_ever_issued', false)">
                                 <span class="ml-2">No</span>
                             </label>
                         </div>
                     </div>
 
-                    <div id="previous-visa" class="conditional-block ${pust.pust_have_ever_issued ? 'active' : ''}">
+                    <div id="previous-visa" class="conditional-block" style="display: ${pust.pust_have_ever_issued ? 'block' : 'none'};">
                         <div class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-gray-700 mb-2">Date Last Issued Visa</label>
-                                    <input type="date" name="pust_last_issued_visa_date" 
-                                           value="${pust.pust_last_issued_visa_date || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('travelHistory', 'pust_last_issued_visa_date', this.value)">
+                                    <input type="text" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                        value="${pust.pust_last_issued_visa_date ? convertToDisplay(pust.pust_last_issued_visa_date) : ''}" 
+                                        onchange="handleDateChange('travelHistory', 'pust_last_issued_visa_date', this.value)"
+                                        placeholder="DD/MM/YYYY"
+                                        required>
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 mb-2">Visa Number</label>
                                     <input type="text" name="pust_visa_no" 
-                                           value="${pust.pust_visa_no || ''}" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onchange="updateApplicantData('travelHistory', 'pust_visa_no', this.value)">
+                                        value="${pust.pust_visa_no || ''}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        onchange="updateApplicantData('travelHistory', 'pust_visa_no', this.value)">
                                 </div>
                             </div>
                             <div>
                                 <label class="inline-flex items-center">
                                     <input type="checkbox" name="pust_remember_visa_no" 
-                                           ${pust.pust_remember_visa_no ? 'checked' : ''}
-                                           onchange="updateApplicantData('travelHistory', 'pust_remember_visa_no', this.checked)">
+                                        ${pust.pust_remember_visa_no ? 'checked' : ''}
+                                        onchange="updateApplicantData('travelHistory', 'pust_remember_visa_no', this.checked)">
                                     <span class="ml-2">Do not know visa number</span>
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 mb-2">Are you applying for the same visa type?</label>
-                            <div class="flex space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pust_have_applied_same_visa" value="1" 
-                                           ${pust.pust_have_applied_same_visa ? 'checked' : ''}
-                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_visa', this.checked)">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pust_have_applied_same_visa" value="0" 
-                                           ${!pust.pust_have_applied_same_visa ? 'checked' : ''}
-                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_visa', this.checked)">
-                                    <span class="ml-2">No</span>
-                                </label>
-                            </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Are you applying for the same visa type?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_applied_same_visa" value="1" 
+                                    ${pust.pust_have_applied_same_visa ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_visa', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_applied_same_visa" value="0" 
+                                    ${!pust.pust_have_applied_same_visa ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_visa', false)">
+                                <span class="ml-2">No</span>
+                            </label>
                         </div>
-                        <div>
-                            <label class="block text-gray-700 mb-2">Are you applying in the same country?</label>
-                            <div class="flex space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pust_have_applied_same_country" value="1" 
-                                           ${pust.pust_have_applied_same_country ? 'checked' : ''}
-                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_country', this.checked)">
-                                    <span class="ml-2">Yes</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="pust_have_applied_same_country" value="0" 
-                                           ${!pust.pust_have_applied_same_country ? 'checked' : ''}
-                                           onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_country', this.checked)">
-                                    <span class="ml-2">No</span>
-                                </label>
-                            </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Are you applying in the same country?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_applied_same_country" value="1" 
+                                    ${pust.pust_have_applied_same_country ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_country', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_applied_same_country" value="0" 
+                                    ${!pust.pust_have_applied_same_country ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_applied_same_country', false)">
+                                <span class="ml-2">No</span>
+                            </label>
                         </div>
                     </div>
 
-                    <!-- Continue with other PUST fields... -->
+                    <!-- Missing Toggle Fields -->
+                    <div>
+                        <label class="block text-gray-700 mb-2">Have you traveled to the USA before?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_travelled_before" value="1" 
+                                    ${pust.pust_have_travelled_before ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('previous-travel-details', true); updateApplicantData('travelHistory', 'pust_have_travelled_before', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_travelled_before" value="0" 
+                                    ${!pust.pust_have_travelled_before ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('previous-travel-details', false); updateApplicantData('travelHistory', 'pust_have_travelled_before', false)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Entry Previous Travel Details -->
+                    <div id="previous-travel-details" class="conditional-block" style="display: ${pust.pust_have_travelled_before ? 'block' : 'none'};">
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium text-gray-800">Previous Travel Details</h4>
+                            <div id="previous-travel-fields">
+                                ${generatePreviousTravelFields(previousTravels)}
+                            </div>
+                            <button type="button" onclick="addPreviousTravelField()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                                <i class="fas fa-plus mr-2"></i> Add Another Previous Travel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Do you have a U.S. Social Security Number?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_social_security_no" value="1" 
+                                    ${pust.pust_have_social_security_no ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('social-security-field', true); updateApplicantData('travelHistory', 'pust_have_social_security_no', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_social_security_no" value="0" 
+                                    ${!pust.pust_have_social_security_no ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('social-security-field', false); updateApplicantData('travelHistory', 'pust_have_social_security_no', false)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="social-security-field" class="conditional-block" style="display: ${pust.pust_have_social_security_no ? 'block' : 'none'};">
+                        <div>
+                            <label class="block text-gray-700 mb-2">U.S. Social Security Number</label>
+                            <input type="text" name="pust_social_security_no" 
+                                value="${pust.pust_social_security_no || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateApplicantData('travelHistory', 'pust_social_security_no', this.value)">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Do you have a U.S. Taxpayer Identification Number?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_us_tin" value="1" 
+                                    ${pust.pust_have_us_tin ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('tin-field', true); updateApplicantData('travelHistory', 'pust_have_us_tin', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_us_tin" value="0" 
+                                    ${!pust.pust_have_us_tin ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('tin-field', false); updateApplicantData('travelHistory', 'pust_have_us_tin', false)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="tin-field" class="conditional-block" style="display: ${pust.pust_have_us_tin ? 'block' : 'none'};">
+                        <div>
+                            <label class="block text-gray-700 mb-2">U.S. Taxpayer Identification Number</label>
+                            <input type="text" name="pust_us_tin" 
+                                value="${pust.pust_us_tin || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateApplicantData('travelHistory', 'pust_us_tin', this.value)">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Do you ever hold a U.S. Driver License?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_us_driving_license" value="1" 
+                                    ${pust.pust_have_us_driving_license ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('driver-license-section', true); updateApplicantData('travelHistory', 'pust_have_us_driving_license', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_us_driving_license" value="0" 
+                                    ${!pust.pust_have_us_driving_license ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('driver-license-section', false); updateApplicantData('travelHistory', 'pust_have_us_driving_license', false)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="driver-license-section" class="conditional-block" style="display: ${pust.pust_have_us_driving_license ? 'block' : 'none'};">
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-medium text-gray-800">U.S. Driver License Details</h4>
+                            <div id="driver-license-fields">
+                                ${generateDriverLicenseFields(driverLicenses)}
+                            </div>
+                            <button type="button" onclick="addDriverLicenseField()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center">
+                                <i class="fas fa-plus mr-2"></i> Add Another Driver License
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Have you been ten fingerprinted?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_ten_fingerprint" value="1" 
+                                    ${pust.pust_have_ten_fingerprint ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_ten_fingerprint', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_ten_fingerprint" value="0" 
+                                    ${!pust.pust_have_ten_fingerprint ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_ten_fingerprint', false)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Have you ever been refused a visa to the USA?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_refused_us_visa" value="1" 
+                                    ${pust.pust_have_refused_us_visa ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('visa-refusal-explain', true); updateApplicantData('travelHistory', 'pust_have_refused_us_visa', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_refused_us_visa" value="0" 
+                                    ${!pust.pust_have_refused_us_visa ? 'checked' : ''}
+                                    onchange="toggleConditionalBlock('visa-refusal-explain', false); updateApplicantData('travelHistory', 'pust_have_refused_us_visa', false)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="visa-refusal-explain" class="conditional-block" style="display: ${pust.pust_have_refused_us_visa ? 'block' : 'none'};">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Explain Visa Refusal</label>
+                            <textarea name="pust_visa_refusal_explain" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateApplicantData('travelHistory', 'pust_visa_refusal_explain', this.value)">${pust.pust_visa_refusal_explain || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2">Are you or have you ever been in the USA as a legal permanent resident?</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_legal_permanent_resident" value="1" 
+                                    ${pust.pust_have_legal_permanent_resident ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_legal_permanent_resident', true)">
+                                <span class="ml-2">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="pust_have_legal_permanent_resident" value="0" 
+                                    ${!pust.pust_have_legal_permanent_resident ? 'checked' : ''}
+                                    onchange="updateApplicantData('travelHistory', 'pust_have_legal_permanent_resident', false)">
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Complex Conditional Logic -->
+                    <div id="complex-visa-questions" class="conditional-block" style="display: ${(pust.pust_have_ever_issued && pust.pust_have_travelled_before) ? 'block' : 'none'};">
+                        <div class="space-y-6 border-t pt-6">
+                            <h4 class="text-lg font-medium text-gray-800">Additional Visa Information</h4>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-2">Have your U.S. visa ever been lost or stolen?</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pust_have_us_visa_lost" value="1" 
+                                            ${pust.pust_have_us_visa_lost ? 'checked' : ''}
+                                            onchange="updateApplicantData('travelHistory', 'pust_have_us_visa_lost', true)">
+                                        <span class="ml-2">Yes</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pust_have_us_visa_lost" value="0" 
+                                            ${!pust.pust_have_us_visa_lost ? 'checked' : ''}
+                                            onchange="updateApplicantData('travelHistory', 'pust_have_us_visa_lost', false)">
+                                        <span class="ml-2">No</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 mb-2">Have your U.S. visa ever been cancelled or revoked?</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pust_have_us_visa_cancelled" value="1" 
+                                            ${pust.pust_have_us_visa_cancelled ? 'checked' : ''}
+                                            onchange="updateApplicantData('travelHistory', 'pust_have_us_visa_cancelled', true)">
+                                        <span class="ml-2">Yes</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="pust_have_us_visa_cancelled" value="0" 
+                                            ${!pust.pust_have_us_visa_cancelled ? 'checked' : ''}
+                                            onchange="updateApplicantData('travelHistory', 'pust_have_us_visa_cancelled', false)">
+                                        <span class="ml-2">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
 
+        // Helper Functions for Multi-Entry Sections
+        function generatePreviousTravelFields(travels) {
+            return travels.map((travel, index) => `
+                <div class="previous-travel-field border-b pb-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Date of Arrival</label>
+                            <input type="date" name="pust_arrival_date" 
+                                value="${travel.arrival_date || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updatePreviousTravelData(${index}, 'arrival_date', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Length of Stay</label>
+                            <input type="text" name="pust_previous_staying_length" 
+                                value="${travel.staying_length || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updatePreviousTravelData(${index}, 'staying_length', this.value)">
+                        </div>
+                    </div>
+                    ${index > 0 ? `
+                        <button type="button" onclick="removePreviousTravelField(${index})" class="mt-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center">
+                            <i class="fas fa-times mr-2"></i> Remove Travel
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function addPreviousTravelField() {
+            const container = document.getElementById('previous-travel-fields');
+            const index = container.children.length;
+            const newField = document.createElement('div');
+            newField.className = 'previous-travel-field border-b pb-4 mb-4';
+            newField.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Date of Arrival</label>
+                        <input type="date" name="pust_arrival_date" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="updatePreviousTravelData(${index}, 'arrival_date', this.value)">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Length of Stay</label>
+                        <input type="text" name="pust_previous_staying_length" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="updatePreviousTravelData(${index}, 'staying_length', this.value)">
+                    </div>
+                </div>
+                <button type="button" onclick="removePreviousTravelField(${index})" class="mt-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center">
+                    <i class="fas fa-times mr-2"></i> Remove Travel
+                </button>
+            `;
+            container.appendChild(newField);
+        }
+
+        function removePreviousTravelField(index) {
+            const field = document.querySelector(`.previous-travel-field:nth-child(${index + 1})`);
+            if (field) {
+                field.remove();
+                updatePreviousTravelsData();
+            }
+        }
+
+        function updatePreviousTravelData(index, field, value) {
+            if (!currentApplicant.travelHistory.previousTravels) {
+                currentApplicant.travelHistory.previousTravels = [];
+            }
+            if (!currentApplicant.travelHistory.previousTravels[index]) {
+                currentApplicant.travelHistory.previousTravels[index] = {};
+            }
+            currentApplicant.travelHistory.previousTravels[index][field] = value;
+        }
+
+        function updatePreviousTravelsData() {
+            const travelFields = document.querySelectorAll('.previous-travel-field');
+            currentApplicant.travelHistory.previousTravels = Array.from(travelFields).map((field, index) => {
+                return {
+                    arrival_date: field.querySelector('input[name="pust_arrival_date"]')?.value || '',
+                    staying_length: field.querySelector('input[name="pust_previous_staying_length"]')?.value || ''
+                };
+            });
+        }
+    
+        function generateDriverLicenseFields(licenses) {
+            return licenses.map((license, index) => `
+                <div class="driver-license-field border-b pb-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">License Number</label>
+                            <input type="text" name="pust_driving_license_no" 
+                                value="${license.license_no || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateDriverLicenseData(${index}, 'license_no', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">State</label>
+                            <input type="text" name="pust_driving_license_state" 
+                                value="${license.state || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateDriverLicenseData(${index}, 'state', this.value)">
+                        </div>
+                    </div>
+                    ${index > 0 ? `
+                        <button type="button" onclick="removeDriverLicenseField(${index})" class="mt-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center">
+                            <i class="fas fa-times mr-2"></i> Remove License
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function addDriverLicenseField() {
+            const container = document.getElementById('driver-license-fields');
+            const index = container.children.length;
+            const newField = document.createElement('div');
+            newField.className = 'driver-license-field border-b pb-4 mb-4';
+            newField.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">License Number</label>
+                        <input type="text" name="pust_driving_license_no" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="updateDriverLicenseData(${index}, 'license_no', this.value)">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">State</label>
+                        <input type="text" name="pust_driving_license_state" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="updateDriverLicenseData(${index}, 'state', this.value)">
+                    </div>
+                </div>
+                <button type="button" onclick="removeDriverLicenseField(${index})" class="mt-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center">
+                    <i class="fas fa-times mr-2"></i> Remove License
+                </button>
+            `;
+            container.appendChild(newField);
+        }
+
+        function removeDriverLicenseField(index) {
+            const field = document.querySelector(`.driver-license-field:nth-child(${index + 1})`);
+            if (field) {
+                field.remove();
+                updateDriverLicensesData();
+            }
+        }
+
+        function updateDriverLicenseData(index, field, value) {
+            if (!currentApplicant.travelHistory.driverLicenses) {
+                currentApplicant.travelHistory.driverLicenses = [];
+            }
+            if (!currentApplicant.travelHistory.driverLicenses[index]) {
+                currentApplicant.travelHistory.driverLicenses[index] = {};
+            }
+            currentApplicant.travelHistory.driverLicenses[index][field] = value;
+        }
+
+        function updateDriverLicensesData() {
+            const licenseFields = document.querySelectorAll('.driver-license-field');
+            currentApplicant.travelHistory.driverLicenses = Array.from(licenseFields).map((field, index) => {
+                return {
+                    license_no: field.querySelector('input[name="pust_driving_license_no"]')?.value || '',
+                    state: field.querySelector('input[name="pust_driving_license_state"]')?.value || ''
+                };
+            });
+        }
+
+        // -------------DONE -- END---------------
+
+        
+
         // U.S. Contact Information Step (Based on Excel USCI section)
         function generateUSContactStep(applicant) {
             const usci = applicant.usContactInfo || {};
-            
+
             return `
                 <div class="space-y-6">
                     <div>
@@ -1293,7 +2210,7 @@ if ($pnr) {
         function generateFamilyInfoStep(applicant) {
             const fm = applicant.familyInfo || {};
             const familyMembers = fm.familyMembers || [];
-            
+
             return `
                 <div class="space-y-6">
                     <div>
@@ -1347,7 +2264,7 @@ if ($pnr) {
         function generateWorkInfoStep(applicant) {
             const wi = applicant.employmentInfo || {};
             const previousEmployment = wi.previousEmployment || [];
-            
+
             return `
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1471,7 +2388,7 @@ if ($pnr) {
         function generateEducationInfoStep(applicant) {
             const edi = applicant.educationalInfo || {};
             const institutions = edi.institutions || [];
-            
+
             return `
                 <div class="space-y-6">
                     <div>
@@ -1510,7 +2427,7 @@ if ($pnr) {
         // Other Information Step (Based on Excel OI section)
         function generateOtherInfoStep(applicant) {
             const oi = applicant.otherInfo || {};
-            
+
             return `
                 <div class="space-y-6">
                     <div>
@@ -1570,37 +2487,6 @@ if ($pnr) {
                         <i class="fas fa-times"></i>
                     </button>
                     ` : ''}
-                </div>
-            `).join('');
-        }
-
-        function generateSocialMediaFields(socialMedia) {
-            return socialMedia.map((item, index) => `
-                <div class="dynamic-field-group">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-medium text-gray-700">Social Media Profile ${index + 1}</h4>
-                        ${index > 0 ? `
-                        <button type="button" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-lg text-sm" onclick="removeSocialMediaField(${index})">
-                            Remove
-                        </button>
-                        ` : ''}
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-700 mb-2">Platform</label>
-                            <input type="text" 
-                                   value="${item.platform || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateSocialMediaData(${index}, 'platform', this.value)">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-2">User Name/Link</label>
-                            <input type="text" 
-                                   value="${item.username || ''}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   onchange="updateSocialMediaData(${index}, 'username', this.value)">
-                        </div>
-                    </div>
                 </div>
             `).join('');
         }
@@ -1820,9 +2706,15 @@ if ($pnr) {
         function addSocialMediaField() {
             const applicant = state.applicants[state.currentApplicant];
             if (!applicant.contactInfo.socialMedia) {
-                applicant.contactInfo.socialMedia = [{platform: '', username: ''}];
+                applicant.contactInfo.socialMedia = [{
+                    platform: '',
+                    username: ''
+                }];
             }
-            applicant.contactInfo.socialMedia.push({platform: '', username: ''});
+            applicant.contactInfo.socialMedia.push({
+                platform: '',
+                username: ''
+            });
             generateFormSteps();
             saveToLocalStorage();
         }
@@ -1904,14 +2796,14 @@ if ($pnr) {
             }
         }
 
-        function removeSocialMediaField(index) {
-            const applicant = state.applicants[state.currentApplicant];
-            if (applicant.contactInfo.socialMedia && applicant.contactInfo.socialMedia.length > 1) {
-                applicant.contactInfo.socialMedia.splice(index, 1);
-                generateFormSteps();
-                saveToLocalStorage();
-            }
-        }
+        // function removeSocialMediaField(index) {
+        //     const applicant = state.applicants[state.currentApplicant];
+        //     if (applicant.contactInfo.socialMedia && applicant.contactInfo.socialMedia.length > 1) {
+        //         applicant.contactInfo.socialMedia.splice(index, 1);
+        //         generateFormSteps();
+        //         saveToLocalStorage();
+        //     }
+        // }
 
         function removeLocationField(index) {
             const applicant = state.applicants[state.currentApplicant];
@@ -2030,12 +2922,26 @@ if ($pnr) {
         }
 
         // Utility functions
+        // function toggleConditionalBlock(blockId, show) {
+        //     const block = document.getElementById(blockId);
+        //     if (block) {
+        //         if (show) {
+        //             block.classList.add('active');
+        //         } else {
+        //             block.classList.remove('active');
+        //         }
+        //     }
+        // }
+
+        // Updated toggle function to properly handle conditional blocks
         function toggleConditionalBlock(blockId, show) {
             const block = document.getElementById(blockId);
             if (block) {
                 if (show) {
+                    block.style.display = 'block';
                     block.classList.add('active');
                 } else {
+                    block.style.display = 'none';
                     block.classList.remove('active');
                 }
             }
@@ -2100,7 +3006,7 @@ if ($pnr) {
         function updateUI() {
             document.getElementById('current-step').textContent = state.currentStep + 1;
             document.getElementById('current-applicant-number').textContent = state.currentApplicant + 1;
-            
+
             const individualProgressPercentage = ((state.currentStep + 1) / state.totalSteps) * 100;
             document.getElementById('individual-progress-bar').style.width = `${individualProgressPercentage}%`;
         }
@@ -2115,7 +3021,7 @@ if ($pnr) {
                 currentStep: state.currentStep,
                 timestamp: new Date().toISOString()
             };
-            localStorage.setItem('usaVisaApplication-'+state.pnr, JSON.stringify(applicationData));
+            localStorage.setItem('usaVisaApplication-' + state.pnr, JSON.stringify(applicationData));
         }
 
         function saveAndExit() {
@@ -2132,7 +3038,7 @@ if ($pnr) {
         function generateTabs() {
             const tabsContainer = document.getElementById('applicant-tabs');
             tabsContainer.innerHTML = '';
-            
+
             for (let i = 0; i < state.totalApplicants; i++) {
                 const applicant = state.applicants[i];
                 const tab = document.createElement('div');
@@ -2154,7 +3060,7 @@ if ($pnr) {
         function generateStepNavigation() {
             const stepNavContainer = document.getElementById('step-navigation');
             stepNavContainer.innerHTML = '';
-            
+
             state.steps.forEach((step, index) => {
                 const isCurrent = index === state.currentStep;
                 const stepNavItem = document.createElement('div');
@@ -2191,6 +3097,69 @@ if ($pnr) {
             // Load from DB data that was passed from PHP
             initializeFormFromState();
         }
+
+        function handleDateChange(category, field, value) {
+            if (isValidDate(value)) {
+                const isoDate = convertToISO(value);
+                updateApplicantData(category, field, isoDate);
+            } else {
+                alert('Please enter date in DD/MM/YYYY format');
+                // ফোকাস ফিরিয়ে দিন এবং ভ্যালু ক্লিয়ার করুন
+                event.target.focus();
+                event.target.value = '';
+            }
+        }
+
+        // আপনার existing code এর নিচে এই ফাংশনগুলো যোগ করুন
+
+        // তারিখ validation
+        function isValidDate(dateString) {
+            const pattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+            if (!pattern.test(dateString)) return false;
+
+            const day = parseInt(dateString.split('/')[0]);
+            const month = parseInt(dateString.split('/')[1]);
+            const year = parseInt(dateString.split('/')[2]);
+
+            // সহজ validation
+            if (day < 1 || day > 31) return false;
+            if (month < 1 || month > 12) return false;
+            if (year < 1900 || year > 2100) return false;
+
+            return true;
+        }
+
+        // DD/MM/YYYY থেকে YYYY-MM-DD
+        function convertToISO(dateString) {
+            if (!isValidDate(dateString)) return '';
+            const parts = dateString.split('/');
+            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+
+        // YYYY-MM-DD থেকে DD/MM/YYYY
+        function convertToDisplay(isoDate) {
+            if (!isoDate) return '';
+            const parts = isoDate.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        // তারিখ change handler
+        function handleDateChange(category, field, value) {
+            if (value === '') {
+                updateApplicantData(category, field, '');
+                return;
+            }
+
+            if (isValidDate(value)) {
+                const isoDate = convertToISO(value);
+                updateApplicantData(category, field, isoDate);
+            } else {
+                alert('Invalid date format. Please use DD/MM/YYYY');
+                event.target.value = '';
+                updateApplicantData(category, field, '');
+            }
+        }
     </script>
 </body>
+
 </html>
