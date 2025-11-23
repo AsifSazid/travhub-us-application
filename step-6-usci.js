@@ -1,4 +1,3 @@
-        // U.S. Contact Information Step (Based on Excel USCI section)
         function generateUSContactStep(applicant) {
             const usci = applicant.usContactInfo || {};
 
@@ -110,17 +109,10 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-gray-700 mb-2">Company Surname</label>
-                                    <input type="text" name="usci_contact_company_surname" 
-                                        value="${usci.usci_contact_company_surname || ''}" 
+                                    <input type="text" name="usci_contact_company_name" 
+                                        value="${usci.usci_contact_company_name || ''}" 
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        onchange="updateApplicantData('usContactInfo', 'usci_contact_company_surname', this.value)">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Company Given Name</label>
-                                    <input type="text" name="usci_contact_company_given_name" 
-                                        value="${usci.usci_contact_company_given_name || ''}" 
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        onchange="updateApplicantData('usContactInfo', 'usci_contact_company_given_name', this.value)">
+                                        onchange="updateApplicantData('usContactInfo', 'usci_contact_company_name', this.value)">
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 mb-2">Company Telephone</label>
@@ -198,17 +190,10 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-gray-700 mb-2">Hotel Surname</label>
-                                    <input type="text" name="usci_contact_hotel_surname" 
-                                        value="${usci.usci_contact_hotel_surname || ''}" 
+                                    <input type="text" name="usci_contact_hotel_name" 
+                                        value="${usci.usci_contact_hotel_name || ''}" 
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        onchange="updateApplicantData('usContactInfo', 'usci_contact_hotel_surname', this.value)">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 mb-2">Hotel Given Name</label>
-                                    <input type="text" name="usci_contact_hotel_given_name" 
-                                        value="${usci.usci_contact_hotel_given_name || ''}" 
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        onchange="updateApplicantData('usContactInfo', 'usci_contact_hotel_given_name', this.value)">
+                                        onchange="updateApplicantData('usContactInfo', 'usci_contact_hotel_name', this.value)">
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 mb-2">Hotel Telephone</label>
