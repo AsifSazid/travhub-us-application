@@ -5,17 +5,17 @@ $pnr = $_GET['pnr'] ?? null;
 $dbApplicationData = null;
 
 if ($pnr) {
-    // 1. Fetch application info from DATABASE FIRST
+    // 1. Fetch application info from DATABASE FIRST 
     $stmt = $pdo->prepare("SELECT * FROM applications WHERE pnr = ?");
     $stmt->execute([$pnr]);
     $application = $stmt->fetch(PDO::FETCH_ASSOC);
-
+    
     if ($application) {
         // 2. Fetch all applicants from DATABASE
         $stmt2 = $pdo->prepare("SELECT * FROM applicants WHERE pnr = ?");
         $stmt2->execute([$pnr]);
         $appRows = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-
+        
         $applicants = [];
         foreach ($appRows as $ap) {
             $applicants[] = [
@@ -136,6 +136,31 @@ if ($pnr) {
 
         .conditional-block.active {
             display: block;
+        }
+        .preview-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            background-color: #f9fafb;
+        }
+
+        .preview-section h3 {
+            color: #374151;
+        }
+
+        .preview-section div {
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-section strong {
+            color: #4b5563;
+            min-width: 120px;
+            display: inline-block;
+        }
+
+        /* Smooth transitions */
+        .step {
+            transition: all 0.3s ease-in-out;
         }
     </style>
 </head>
@@ -365,8 +390,56 @@ if ($pnr) {
                     icon: 'fa-info-circle',
                     description: 'Additional information'
                 }
-            ]
+            ],
+            showPreview: false, // নতুন property
+            previewApplicant: null // কোন applicant এর preview দেখাচ্ছে
         };
+
+        // এর IMMEDIATELY পরে এই function গুলো যোগ করুন:
+        function initializeApplication() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pnrFromUrl = urlParams.get('pnr');
+            
+            console.log('Initializing application...');
+            console.log('PNR from URL:', pnrFromUrl);
+            console.log('State PNR:', state.pnr);
+            
+            if (pnrFromUrl) {
+                loadApplicationByPNR(pnrFromUrl);
+            } else if (state.pnr) {
+                initializeFormFromState();
+            } else {
+                document.getElementById('initial-screen').classList.remove('hidden');
+                document.getElementById('multi-applicant-form').classList.add('hidden');
+            }
+        }
+
+        function loadApplicationByPNR(pnr) {
+            const localData = localStorage.getItem('usaVisaApplication-' + pnr);
+            
+            if (localData) {
+                const applicationData = JSON.parse(localData);
+                loadApplicationData(applicationData);
+            } else {
+                if (state.pnr && state.pnr === pnr) {
+                    initializeFormFromState();
+                } else {
+                    alert('Application not found. Please start a new application.');
+                    document.getElementById('initial-screen').classList.remove('hidden');
+                    document.getElementById('multi-applicant-form').classList.add('hidden');
+                }
+            }
+        }
+
+        function loadApplicationData(applicationData) {
+            state.pnr = applicationData.pnr;
+            state.totalApplicants = applicationData.totalApplicants;
+            state.applicants = applicationData.applicants;
+            state.currentApplicant = applicationData.currentApplicant || 0;
+            state.currentStep = applicationData.currentStep || 0;
+            
+            initializeFormFromState();
+        }
 
         // Initialize applicants if empty
         if (state.applicants.length === 0) {
@@ -390,9 +463,7 @@ if ($pnr) {
             });
 
             // If we have DB data, initialize the form
-            if (state.pnr) {
-                initializeFormFromState();
-            }
+            initializeApplication();
         });
 
         function initializeFormFromState() {
@@ -4035,6 +4106,337 @@ if ($pnr) {
             saveToLocalStorage();
         }
 
+        //PORE FELBO SHURU
+
+        // function nextStep() {
+        //     if (state.currentStep < state.totalSteps - 1) {
+        //         state.currentStep++;
+        //         generateFormSteps();
+        //         generateStepNavigation();
+        //         updateUI();
+        //     } else {
+        //         // Last step - show summary or move to next applicant
+        //         if (state.currentApplicant < state.totalApplicants - 1) {
+        //             document.getElementById('next-applicant-btn').classList.remove('hidden');
+        //             document.getElementById('next-btn').classList.add('hidden');
+        //         } else {
+        //             document.getElementById('submit-btn').classList.remove('hidden');
+        //             document.getElementById('next-btn').classList.add('hidden');
+        //         }
+        //     }
+        //     saveToLocalStorage();
+        // }
+
+        // function previousStep() {
+        //     if (state.currentStep > 0) {
+        //         state.currentStep--;
+        //         generateFormSteps();
+        //         generateStepNavigation();
+        //         updateUI();
+        //     }
+        //     saveToLocalStorage();
+        // }
+
+        //PORE FELBO SHESH
+
+        // Update navigation for preview mode
+        function updateNavigationForPreview() {
+            document.getElementById('prev-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('next-applicant-btn').classList.add('hidden');
+            document.getElementById('submit-btn').classList.add('hidden');
+            
+            // Update step navigation to show preview as active
+            const stepNavItems = document.querySelectorAll('.step-nav-item');
+            stepNavItems.forEach((item, index) => {
+                if (index === state.totalSteps - 1) { // Last step (Other Information)
+                    item.classList.add('completed', 'active');
+                    item.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="step-icon w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-green-500 text-white">
+                                <i class="fas fa-check text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800">Application Preview</div>
+                                <div class="text-xs text-gray-500">Review your application</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // Update navigation for form mode
+        function updateNavigationForForm() {
+            document.getElementById('prev-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+            document.getElementById('next-applicant-btn').classList.add('hidden');
+            document.getElementById('submit-btn').classList.add('hidden');
+            
+            generateStepNavigation();
+        }
+
+        // Proceed to next applicant
+        function proceedToNextApplicant(currentApplicantIndex) {
+            if (currentApplicantIndex < state.totalApplicants - 1) {
+                state.currentApplicant = currentApplicantIndex + 1;
+                state.currentStep = 0;
+                state.showPreview = false;
+                state.previewApplicant = null;
+                
+                generateFormSteps();
+                generateStepNavigation();
+                generateTabs();
+                updateUI();
+                saveToLocalStorage();
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
+            }
+        }
+
+        // Show final submission
+        function showFinalSubmission() {
+            if (confirm('Are you sure you want to submit the entire application? This action cannot be undone.')) {
+                submitEntireApplication();
+            }
+        }
+
+        // Submit entire application
+        function submitEntireApplication() {
+            // Show loading state
+            const submitBtn = document.getElementById('submit-btn') || document.querySelector('button[onclick*="showFinalSubmission"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+            submitBtn.disabled = true;
+
+            // Prepare data for submission
+            const submissionData = {
+                pnr: state.pnr,
+                applicants: state.applicants,
+                submittedAt: new Date().toISOString()
+            };
+
+            // Submit to server (AJAX call)
+            fetch('server/submit_application.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(submissionData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showSubmissionSuccess();
+                    
+                    // Clear localStorage
+                    localStorage.removeItem('usaVisaApplication-' + state.pnr);
+                    
+                    // Redirect to success page after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = 'application_success.php?pnr=' + state.pnr;
+                    }, 3000);
+                } else {
+                    throw new Error(data.message || 'Submission failed');
+                }
+            })
+            .catch(error => {
+                console.error('Submission error:', error);
+                alert('Submission failed: ' + error.message);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        // Show submission success
+        function showSubmissionSuccess() {
+            const formStepsContainer = document.getElementById('form-steps');
+            formStepsContainer.innerHTML = `
+                <div class="step active fade-in">
+                    <div class="text-center py-12">
+                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-check text-green-600 text-3xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">Application Submitted Successfully!</h2>
+                        <p class="text-gray-600 mb-6 text-lg">
+                            Your USA visa application has been submitted successfully.
+                        </p>
+                        <div class="bg-gray-50 p-6 rounded-lg max-w-md mx-auto">
+                            <p class="text-sm text-gray-700 mb-2">
+                                <strong>PNR Number:</strong> ${state.pnr}
+                            </p>
+                            <p class="text-sm text-gray-700">
+                                <strong>Total Applicants:</strong> ${state.totalApplicants}
+                            </p>
+                        </div>
+                        <p class="text-gray-500 mt-6">
+                            Redirecting to confirmation page...
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            // Hide all navigation buttons
+            document.getElementById('prev-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('next-applicant-btn').classList.add('hidden');
+            document.getElementById('submit-btn').classList.add('hidden');
+        }
+
+        // Show preview for specific applicant
+        function showApplicantPreview(applicantIndex) {
+            state.showPreview = true;
+            state.previewApplicant = applicantIndex;
+            generateApplicantPreview(applicantIndex);
+            updateNavigationForPreview();
+        }
+
+        // Hide preview and return to form
+        function hideApplicantPreview() {
+            state.showPreview = false;
+            state.previewApplicant = null;
+            generateFormSteps();
+            updateNavigationForForm();
+        }
+
+        // Generate preview content for an applicant
+        function generateApplicantPreview(applicantIndex) {
+            const formStepsContainer = document.getElementById('form-steps');
+            const applicant = state.applicants[applicantIndex];
+            
+            formStepsContainer.innerHTML = `
+                <div class="step active fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Application Preview - Applicant ${applicantIndex + 1}</h2>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                            <i class="fas fa-check-circle mr-1"></i>Completed
+                        </span>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg">
+                        ${generatePreviewSections(applicant, applicantIndex)}
+                    </div>
+                    
+                    <div class="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-2">Next Steps</h3>
+                        <p class="text-blue-700 mb-4">
+                            Please review all information carefully. Once confirmed, you can proceed to the next applicant or submit the entire application.
+                        </p>
+                        
+                        <div class="flex space-x-4">
+                            <button onclick="hideApplicantPreview()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300 flex items-center">
+                                <i class="fas fa-edit mr-2"></i>Edit Application
+                            </button>
+                            
+                            ${applicantIndex < state.totalApplicants - 1 ? `
+                                <button onclick="proceedToNextApplicant(${applicantIndex})" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300 flex items-center">
+                                    Confirm & Next Applicant <i class="fas fa-arrow-right ml-2"></i>
+                                </button>
+                            ` : `
+                                <button onclick="showFinalSubmission()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300 flex items-center">
+                                    Confirm & Final Submit <i class="fas fa-check-circle ml-2"></i>
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Generate all preview sections
+        function generatePreviewSections(applicant, applicantIndex) {
+            const pi = applicant.passportInfo || {};
+            const ci = applicant.contactInfo || {};
+            const pp = applicant.passportInfo || {};
+            const ti = applicant.travelInfo || {};
+            const tci = applicant.travelInfo || {};
+            const pust = applicant.travelHistory || {};
+            const usci = applicant.usContactInfo || {};
+            const fm = applicant.familyInfo || {};
+            const wi = applicant.employmentInfo || {};
+            const edi = applicant.educationalInfo || {};
+            const oi = applicant.otherInfo || {};
+
+            return `
+                <div class="space-y-6 p-6">
+                    <!-- Personal Information -->
+                    <div class="preview-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            <i class="fas fa-user mr-2 text-blue-500"></i>Personal Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><strong>Name:</strong> ${pi.pi_sur_name || ''} ${pi.pi_given_name || ''}</div>
+                            <div><strong>Gender:</strong> ${pi.pi_gender || ''}</div>
+                            <div><strong>Date of Birth:</strong> ${pi.pi_dob ? convertToDisplay(pi.pi_dob) : ''}</div>
+                            <div><strong>Place of Birth:</strong> ${pi.pi_pob || ''}</div>
+                            <div><strong>Marital Status:</strong> ${pi.pi_marital_status || ''}</div>
+                            <div><strong>National ID:</strong> ${pi.pi_nid || 'Not provided'}</div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="preview-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            <i class="fas fa-address-book mr-2 text-blue-500"></i>Contact Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><strong>Primary Phone:</strong> ${ci.pi_primary_no || ''}</div>
+                            <div><strong>Email:</strong> ${ci.emails ? ci.emails[0] : ''}</div>
+                            <div class="md:col-span-2">
+                                <strong>Address:</strong> ${ci.pi_address_line_1 || ''} ${ci.pi_address_line_2 || ''}, ${ci.pi_address_city || ''}, ${ci.pi_address_state || ''} ${ci.pi_address_zip_code || ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Passport Information -->
+                    <div class="preview-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            <i class="fas fa-passport mr-2 text-blue-500"></i>Passport Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><strong>Passport Number:</strong> ${pp.pp_number || ''}</div>
+                            <div><strong>Passport Type:</strong> ${pp.pp_type || ''}</div>
+                            <div><strong>Issue Date:</strong> ${pp.pp_issue_date ? convertToDisplay(pp.pp_issue_date) : ''}</div>
+                            <div><strong>Expiry Date:</strong> ${pp.pp_expiry_date ? convertToDisplay(pp.pp_expiry_date) : ''}</div>
+                            <div><strong>Issuing Authority:</strong> ${pp.pp_issuing_authority || ''}</div>
+                            <div><strong>Issued City:</strong> ${pp.pp_issued_city || ''}</div>
+                        </div>
+                    </div>
+
+                    <!-- Travel Information -->
+                    <div class="preview-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            <i class="fas fa-plane mr-2 text-blue-500"></i>Travel Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><strong>Purpose:</strong> ${ti.ti_travel_purpose || ''}</div>
+                            <div><strong>Travel Plans:</strong> ${ti.ti_have_travel_plan || ''}</div>
+                            ${ti.ti_arrival_date ? `<div><strong>Arrival Date:</strong> ${convertToDisplay(ti.ti_arrival_date)}</div>` : ''}
+                            ${ti.ti_departure_date ? `<div><strong>Departure Date:</strong> ${convertToDisplay(ti.ti_departure_date)}</div>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Work Information -->
+                    <div class="preview-section">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+                            <i class="fas fa-briefcase mr-2 text-blue-500"></i>Work Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><strong>Occupation:</strong> ${wi.wi_primary_occupation_type || ''}</div>
+                            <div><strong>Company/School:</strong> ${wi.wi_company_or_school_name || ''}</div>
+                            ${wi.wi_salary ? `<div><strong>Monthly Salary:</strong> ${wi.wi_salary}</div>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Add more sections as needed -->
+                </div>
+            `;
+        }
+
         function nextStep() {
             if (state.currentStep < state.totalSteps - 1) {
                 state.currentStep++;
@@ -4042,20 +4444,21 @@ if ($pnr) {
                 generateStepNavigation();
                 updateUI();
             } else {
-                // Last step - show summary or move to next applicant
-                if (state.currentApplicant < state.totalApplicants - 1) {
-                    document.getElementById('next-applicant-btn').classList.remove('hidden');
-                    document.getElementById('next-btn').classList.add('hidden');
-                } else {
-                    document.getElementById('submit-btn').classList.remove('hidden');
-                    document.getElementById('next-btn').classList.add('hidden');
-                }
+                // Last step of current applicant
+                // Mark current applicant as completed
+                state.applicants[state.currentApplicant].completed = true;
+                
+                // Show preview for this applicant
+                showApplicantPreview(state.currentApplicant);
             }
             saveToLocalStorage();
         }
 
         function previousStep() {
-            if (state.currentStep > 0) {
+            if (state.showPreview) {
+                // If in preview mode, go back to form
+                hideApplicantPreview();
+            } else if (state.currentStep > 0) {
                 state.currentStep--;
                 generateFormSteps();
                 generateStepNavigation();
@@ -4126,7 +4529,7 @@ if ($pnr) {
                 tab.dataset.applicant = i;
                 tab.innerHTML = `
                     <div class="flex justify-between w-full items-center mb-1">
-                        <span>Applicant ${i + 1}</span>
+                        <span>Applicant ${i + 1} &nbsp;</span>
                         ${applicant.completed ? '<i class="fas fa-check-circle text-green-500"></i>' : ''}
                     </div>
                 `;
@@ -4174,8 +4577,21 @@ if ($pnr) {
         }
 
         function loadSavedApplication() {
-            // Load from DB data that was passed from PHP
-            initializeFormFromState();
+            if (state.pnr) {
+                initializeFormFromState();
+            } else {
+                const keys = Object.keys(localStorage);
+                const appKeys = keys.filter(key => key.startsWith('usaVisaApplication-'));
+                
+                if (appKeys.length > 0) {
+                    // Load the first one
+                    const firstAppKey = appKeys[0];
+                    const appData = JSON.parse(localStorage.getItem(firstAppKey));
+                    loadApplicationData(appData);
+                } else {
+                    alert('No saved applications found.');
+                }
+            }
         }
 
         function handleDateChange(category, field, value) {
