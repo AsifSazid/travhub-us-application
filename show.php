@@ -278,7 +278,7 @@ if ($pnr) {
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             if (!applicationData) {
-                const savedApplication = localStorage.getItem('ukVisaApplication-<?php echo $pnr; ?>');
+                const savedApplication = localStorage.getItem('usaVisaApplication-<?php echo $pnr; ?>');
                 if (savedApplication) {
                     applicationData = JSON.parse(savedApplication);
                 }

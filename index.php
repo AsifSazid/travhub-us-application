@@ -276,7 +276,7 @@ try {
             // Merge with localStorage applications
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key.startsWith("usVisaApplication-")) {
+                if (key.startsWith("usaVisaApplication-")) {
                     try {
                         const appData = JSON.parse(localStorage.getItem(key));
                         if (appData) {
@@ -312,7 +312,7 @@ try {
             }
 
             noApplications.classList.add('hidden');
-            console.log(applications);
+            // console.log(applications);
 
             let html = '';
             applications.forEach((app, index) => {
