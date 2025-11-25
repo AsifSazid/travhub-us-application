@@ -1,5 +1,5 @@
 <?php
-require 'server/db_connection.php'; // your PDO connection
+require 'server/db_connection.php';
 
 $pnr = $_GET['pnr'] ?? null;
 $applicationData = null;
@@ -38,7 +38,7 @@ if ($pnr) {
         // 3. Combine into JS-friendly structure
         $applicationData = [
             'pnr' => $application['pnr'],
-            'nameOfApplicant' => $applicants[0]['passportInfo']['pi_sur_name'] ?? '',
+            'nameOfApplicant' => $application['name_of_applicant'] ?? ($applicants[0]['passportInfo']['pi_sur_name'] ?? ''),
             'totalApplicants' => count($applicants),
             'timestamp' => $application['created_at'],
             'applicants' => $applicants
@@ -51,7 +51,6 @@ if ($pnr) {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,49 +68,35 @@ if ($pnr) {
             background-color: white;
             font-family: inherit;
         }
-
         .copy-field:hover {
             background-color: #f3f4f6;
             border-color: #3b82f6;
         }
-
         .copy-field.copied {
             background-color: #d1fae5;
             color: #065f46;
             border-color: #10b981;
         }
-
         .applicant-section {
             border-left: 4px solid #3b82f6;
             background-color: #f8fafc;
             transition: all 0.3s ease;
         }
-
         .applicant-section.highlighted {
             border-left-color: #10b981;
             background-color: #f0fdf4;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }
-
         .section-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-
         .fade-in {
             animation: fadeIn 0.5s ease-in-out;
         }
-
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
         .toast {
             position: fixed;
             top: 20px;
@@ -125,11 +110,9 @@ if ($pnr) {
             transform: translateX(400px);
             transition: transform 0.3s ease;
         }
-
         .toast.show {
             transform: translateX(0);
         }
-
         .step-progress {
             display: flex;
             justify-content: space-between;
@@ -139,7 +122,6 @@ if ($pnr) {
             border-radius: 0.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-
         .step-item {
             text-align: center;
             flex: 1;
@@ -147,11 +129,9 @@ if ($pnr) {
             cursor: pointer;
             transition: all 0.3s ease;
         }
-
         .step-item:hover {
             transform: translateY(-2px);
         }
-
         .step-item:not(:last-child):after {
             content: '';
             position: absolute;
@@ -162,7 +142,6 @@ if ($pnr) {
             background-color: #e5e7eb;
             z-index: 1;
         }
-
         .step-icon {
             width: 40px;
             height: 40px;
@@ -177,50 +156,41 @@ if ($pnr) {
             font-size: 0.875rem;
             transition: all 0.3s ease;
         }
-
         .step-icon.active {
             background-color: #3b82f6;
             color: white;
         }
-
         .step-icon.highlighted {
             background-color: #10b981;
             color: white;
             transform: scale(1.1);
         }
-
         .step-label {
             font-size: 0.75rem;
             color: #6b7280;
             transition: all 0.3s ease;
         }
-
         .step-label.active {
             color: #3b82f6;
             font-weight: 600;
         }
-
         .step-label.highlighted {
             color: #10b981;
             font-weight: 700;
         }
-
         .applicant-tab {
             cursor: pointer;
             transition: all 0.3s ease;
             border-bottom: 3px solid transparent;
         }
-
         .applicant-tab.active {
             background-color: #3b82f6;
             color: white;
             border-bottom-color: #1d4ed8;
         }
-
         .applicant-tab:hover:not(.active) {
             background-color: #f3f4f6;
         }
-
         .multi-entry-group {
             border: 1px solid #e5e7eb;
             border-radius: 0.5rem;
@@ -230,7 +200,6 @@ if ($pnr) {
         }
     </style>
 </head>
-
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Header -->
@@ -270,13 +239,13 @@ if ($pnr) {
 
     <script>
         let applicationData = <?php
-                                // If DB record exists, send JSON to JS
-                                if ($applicationData) {
-                                    echo json_encode($applicationData);
-                                } else {
-                                    echo 'null';
-                                }
-                                ?>;
+            if ($applicationData && !empty($applicationData['applicants'])) {
+                echo json_encode($applicationData);
+            } else {
+                echo 'null';
+            }
+        ?>;
+        
         let currentApplicantIndex = 0;
         const stepSections = [
             'personal-info', 'travel-info', 'passport-info', 'travel-companion-info',
@@ -294,32 +263,38 @@ if ($pnr) {
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initial applicationData:', applicationData);
+            
             if (!applicationData) {
                 const savedApplication = localStorage.getItem('usaVisaApplication-<?php echo $pnr; ?>');
                 if (savedApplication) {
                     applicationData = JSON.parse(savedApplication);
+                    console.log('Loaded from localStorage:', applicationData);
                 }
             }
 
-            if (!applicationData) {
-                // Show error if nothing found
-                document.getElementById('application-container').innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                        <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                        <h3 class="text-xl font-semibold text-red-800 mb-2">Application Not Found</h3>
-                        <p class="text-red-600">No application found in DB or localStorage for PNR: <?php echo $pnr ?? 'N/A'; ?></p>
-                        <button onclick="window.location.href='index.php'" class="mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300">
-                            Back to Dashboard
-                        </button>
-                    </div>
-                `;
+            if (!applicationData || !applicationData.applicants || applicationData.applicants.length === 0) {
+                showErrorMessage();
                 return;
             }
 
-            // Otherwise, render the application
             renderApplication();
             setupEventListeners();
         });
+
+        function showErrorMessage() {
+            document.getElementById('application-container').innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-red-800 mb-2">Application Not Found</h3>
+                    <p class="text-red-600">No application data found for PNR: <?php echo $pnr ?? 'N/A'; ?></p>
+                    <p class="text-red-500 text-sm mt-2">Please check if the PNR is correct and try again.</p>
+                    <button onclick="window.location.href='index.php'" class="mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300">
+                        Back to Dashboard
+                    </button>
+                </div>
+            `;
+        }
 
         // Set up event listeners
         function setupEventListeners() {
@@ -333,6 +308,11 @@ if ($pnr) {
         // Render the application
         function renderApplication() {
             const container = document.getElementById('application-container');
+            
+            if (!applicationData || !applicationData.applicants || applicationData.applicants.length === 0) {
+                showErrorMessage();
+                return;
+            }
 
             let html = `
                 <!-- Application Header -->
@@ -381,7 +361,10 @@ if ($pnr) {
             }
 
             // Render current applicant
-            html += renderApplicant(applicationData.applicants[currentApplicantIndex], currentApplicantIndex);
+            const currentApplicant = applicationData.applicants[currentApplicantIndex];
+            if (currentApplicant) {
+                html += renderApplicant(currentApplicant, currentApplicantIndex);
+            }
 
             container.innerHTML = html;
 
@@ -400,22 +383,24 @@ if ($pnr) {
 
             // Add step click functionality
             setupStepNavigation();
+            
+            // Highlight first section by default
+            setTimeout(() => {
+                highlightStepSection(0);
+            }, 100);
         }
 
         // Switch between applicants
         function switchApplicant(applicantIndex) {
-            currentApplicantIndex = applicantIndex;
-            renderApplication();
-
-            // Also update the step highlighting for the new applicant
-            setTimeout(() => {
-                setupStepNavigation();
-                highlightStepSection(0); // Highlight first section by default
-            }, 100);
+            if (applicantIndex >= 0 && applicantIndex < applicationData.applicants.length) {
+                currentApplicantIndex = applicantIndex;
+                renderApplication();
+            }
         }
 
         // Render a single applicant
         function renderApplicant(applicant, index) {
+            // Safe data extraction with fallbacks
             const pi = applicant.passportInfo || {};
             const ci = applicant.contactInfo || {};
             const ti = applicant.travelInfo || {};
@@ -433,7 +418,7 @@ if ($pnr) {
                     <div class="border-b border-gray-200 px-6 py-4 bg-gray-50">
                         <h3 class="text-xl font-bold text-gray-800 flex items-center">
                             <i class="fas fa-user mr-2 text-blue-500"></i>
-                            Applicant ${index + 1} - ${applicant.user_pnr ?? applicant.id}
+                            Applicant ${index + 1} - ${applicant.user_pnr || applicant.id || 'N/A'}
                             ${applicant.completed ? 
                                 '<span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Completed</span>' : 
                                 '<span class="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">In Progress</span>'
@@ -443,66 +428,14 @@ if ($pnr) {
                     
                     <!-- Step Progress -->
                     <div class="step-progress">
-                        <div class="step-item" data-step="0">
-                            <div class="step-icon active">
-                                <i class="fas fa-user"></i>
+                        ${stepSections.map((section, idx) => `
+                            <div class="step-item" data-step="${idx}">
+                                <div class="step-icon active">
+                                    <i class="fas ${getStepIcon(idx)}"></i>
+                                </div>
+                                <div class="step-label active">${getStepLabel(idx)}</div>
                             </div>
-                            <div class="step-label active">Personal Info</div>
-                        </div>
-                        <div class="step-item" data-step="1">
-                            <div class="step-icon active">
-                                <i class="fas fa-plane"></i>
-                            </div>
-                            <div class="step-label active">Travel Info</div>
-                        </div>
-                        <div class="step-item" data-step="2">
-                            <div class="step-icon active">
-                                <i class="fas fa-passport"></i>
-                            </div>
-                            <div class="step-label active">Passport</div>
-                        </div>
-                        <div class="step-item" data-step="3">
-                            <div class="step-icon active">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="step-label active">Travel Companion</div>
-                        </div>
-                        <div class="step-item" data-step="4">
-                            <div class="step-icon active">
-                                <i class="fas fa-history"></i>
-                            </div>
-                            <div class="step-label active">Previous Travel</div>
-                        </div>
-                        <div class="step-item" data-step="5">
-                            <div class="step-icon active">
-                                <i class="fas fa-address-book"></i>
-                            </div>
-                            <div class="step-label active">US Contact</div>
-                        </div>
-                        <div class="step-item" data-step="6">
-                            <div class="step-icon active">
-                                <i class="fas fa-user-friends"></i>
-                            </div>
-                            <div class="step-label active">Family</div>
-                        </div>
-                        <div class="step-item" data-step="7">
-                            <div class="step-icon active">
-                                <i class="fas fa-briefcase"></i>
-                            </div>
-                            <div class="step-label active">Work</div>
-                        </div>
-                        <div class="step-item" data-step="8">
-                            <div class="step-icon active">
-                                <i class="fas fa-graduation-cap"></i>
-                            </div>
-                            <div class="step-label active">Education</div>
-                        </div>
-                        <div class="step-item" data-step="9">
-                            <div class="step-icon active">
-                                <i class="fas fa-info-circle"></i>
-                            </div>
-                            <div class="step-label active">Other Info</div>
-                        </div>
+                        `).join('')}
                     </div>
                     
                     <div class="p-6 space-y-6">
@@ -556,7 +489,7 @@ if ($pnr) {
                                         <h6 class="font-medium text-gray-700 mb-2">Social Media Profiles</h6>
                                         <div class="space-y-2">
                                             ${ci.socialMedia.filter(sm => sm.platform || sm.username).map(sm => 
-                                                renderField(sm.platform, sm.username)
+                                                renderField(sm.platform || 'Social Media', sm.username)
                                             ).join('')}
                                         </div>
                                     </div>
@@ -673,9 +606,9 @@ if ($pnr) {
                                 ${usci.usci_contact_type === 'Person' ? renderField('Contact Given Name', usci.usci_contact_person_given_name) : ''}
                                 ${usci.usci_contact_type === 'Company' ? renderField('Company Name', usci.usci_contact_company_name) : ''}
                                 ${usci.usci_contact_type === 'Hotel' ? renderField('Hotel Name', usci.usci_contact_hotel_name) : ''}
-                                ${renderField('Telephone', usci['usci contact person telephone'] || usci['usci contact company telephone'] || usci['usci contact hotel telephone'])}
-                                ${renderField('Email', usci['usci contact person email'] || usci['usci contact company email'] || usci['usci contact hotel email'])}
-                                ${renderField('Relationship', usci['usci contact person relationship'] || usci['usci contact company relationship'] || usci['usci contact hotel relationship'])}
+                                ${renderField('Telephone', usci['usci contact person telephone'] || usci['usci contact company telephone'] || usci['usci contact hotel telephone'] || '')}
+                                ${renderField('Email', usci['usci contact person email'] || usci['usci contact company email'] || usci['usci contact hotel email'] || '')}
+                                ${renderField('Relationship', usci['usci contact person relationship'] || usci['usci contact company relationship'] || usci['usci contact hotel relationship'] || '')}
                             </div>
                         </div>
 
@@ -795,7 +728,7 @@ if ($pnr) {
                                     <div>
                                         <h6 class="font-medium text-gray-700 mb-2">Organizations</h6>
                                         <div class="space-y-2">
-                                            ${oi.oi_organization_name.map(org => renderField('Organization', org.name)).join('')}
+                                            ${oi.oi_organization_name.map(org => renderField('Organization', org.name || org)).join('')}
                                         </div>
                                     </div>
                                 ` : ''}
@@ -861,6 +794,25 @@ if ($pnr) {
                     </div>
                 </div>
             `;
+        }
+
+        // Helper functions for steps
+        function getStepIcon(stepIndex) {
+            const icons = [
+                'fa-user', 'fa-plane', 'fa-passport', 'fa-users',
+                'fa-history', 'fa-address-book', 'fa-user-friends',
+                'fa-briefcase', 'fa-graduation-cap', 'fa-info-circle'
+            ];
+            return icons[stepIndex] || 'fa-info-circle';
+        }
+
+        function getStepLabel(stepIndex) {
+            const labels = [
+                'Personal Info', 'Travel Info', 'Passport', 'Travel Companion',
+                'Previous Travel', 'US Contact', 'Family', 'Work',
+                'Education', 'Other Info'
+            ];
+            return labels[stepIndex] || 'Info';
         }
 
         // Setup copy functionality
@@ -1014,5 +966,4 @@ if ($pnr) {
         }
     </script>
 </body>
-
 </html>

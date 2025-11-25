@@ -1,18 +1,9 @@
 <?php
-// header("Content-Type: application/json");
-require 'server/db_connection.php'; // your PDO connection
+require 'server/db_connection.php';
 
 try {
-    // Optional: load a specific PNR or all applications
-    $pnr = isset($_GET['pnr']) ? $_GET['pnr'] : null;
-
-    if ($pnr) {
-        $stmt = $pdo->prepare("SELECT * FROM applications WHERE pnr = ?");
-        $stmt->execute([$pnr]);
-    } else {
-        $stmt = $pdo->query("SELECT * FROM applications");
-    }
-
+    // Load all applications from database
+    $stmt = $pdo->query("SELECT * FROM applications ORDER BY created_at DESC");
     $applications = [];
 
     while ($app = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -22,45 +13,56 @@ try {
         $applicants = [];
 
         while ($ap = $stmt_applicants->fetch(PDO::FETCH_ASSOC)) {
-            $applicants[] = [
-                "pnr" => $ap['pnr'],
-                "user_pnr" => $ap['user_pnr'],
-                "completed" => (bool)$ap['completed'],
-                "passportInfo" => json_decode($ap['passport_info'], true),
-                "nidInfo" => json_decode($ap['nid_info'], true),
-                "contactInfo" => json_decode($ap['contact_info'], true),
-                "familyInfo" => json_decode($ap['family_info'], true),
-                "accommodationDetails" => json_decode($ap['accommodation_details'], true),
-                "employmentInfo" => json_decode($ap['employment_info'], true),
-                "incomeExpenditure" => json_decode($ap['income_expenditure'], true),
-                "travelInfo" => json_decode($ap['travel_info'], true),
-                "travelHistory" => json_decode($ap['travel_history'], true)
+            // SAFE data extraction with column existence check
+            $applicantData = [
+                "pnr" => $ap['pnr'] ?? null,
+                "user_pnr" => $ap['user_pnr'] ?? null,
+                "completed" => isset($ap['completed']) ? (bool)$ap['completed'] : false
             ];
+
+            // Only include columns that actually exist in your database
+            $jsonColumns = [
+                'passport_info', 'contact_info', 'family_info', 'us_contact_info',
+                'employment_info', 'educational_info', 'travel_info', 'travel_history', 'other_info'
+            ];
+
+            foreach ($jsonColumns as $column) {
+                if (isset($ap[$column]) && $ap[$column] !== null) {
+                    $key = str_replace('_info', 'Info', $column);
+                    $key = str_replace('_history', 'History', $key);
+                    $key = lcfirst(str_replace('_', '', ucwords($key, '_')));
+                    
+                    $applicantData[$key] = json_decode($ap[$column], true) ?? [];
+                } else {
+                    // If column doesn't exist, set empty array
+                    $key = str_replace('_info', 'Info', $column);
+                    $key = str_replace('_history', 'History', $key);
+                    $key = lcfirst(str_replace('_', '', ucwords($key, '_')));
+                    $applicantData[$key] = [];
+                }
+            }
+
+            $applicants[] = $applicantData;
         }
 
         $applications[] = [
-            "pnr" => $app['pnr'],
-            "nameOfApplicant" => $app['name_of_applicant'],
-            "totalApplicants" => $app['total_applicants'],
-            "status" => $app['status'],
-            "timestamp" => $app['timestamp'],
+            "pnr" => $app['pnr'] ?? '',
+            "nameOfApplicant" => $app['name_of_applicant'] ?? '',
+            "totalApplicants" => $app['total_applicants'] ?? 0,
+            "status" => $app['status'] ?? 'draft',
+            "timestamp" => $app['created_at'] ?? date('Y-m-d H:i:s'),
             "applicants" => $applicants
         ];
     }
 
-    // echo json_encode($applications, JSON_PRETTY_PRINT);
 } catch (Exception $e) {
-    echo json_encode([
-        "status" => "error",
-        "message" => $e->getMessage()
-    ]);
+    $applications = [];
+    error_log("Database error: " . $e->getMessage());
 }
-
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -72,56 +74,40 @@ try {
             transition: all 0.3s ease;
             border-left: 4px solid transparent;
         }
-
         .application-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border-left-color: #3b82f6;
         }
-
         .progress-bar {
             transition: width 0.5s ease-in-out;
         }
-
         .fade-in {
             animation: fadeIn 0.5s ease-in-out;
         }
-
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
         .status-badge {
             font-size: 0.75rem;
             padding: 0.25rem 0.5rem;
             border-radius: 9999px;
         }
-
         .status-complete {
             background-color: #10b981;
             color: white;
         }
-
         .status-in-progress {
             background-color: #f59e0b;
             color: white;
         }
-
         .status-not-started {
             background-color: #6b7280;
             color: white;
         }
     </style>
 </head>
-
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <!-- Header -->
@@ -216,34 +202,9 @@ try {
         </footer>
     </div>
 
-    <!-- Application Details Modal -->
-    <div id="application-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gray-800">Application Details</h3>
-                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <div id="modal-content">
-                    <!-- Modal content will be loaded here -->
-                </div>
-            </div>
-            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                <button id="cancel-modal" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-300">
-                    Close
-                </button>
-                <button id="continue-application" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300">
-                    Continue Application
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
         // Application data structure
-        let applications = [];
+        let applications = <?php echo json_encode($applications, JSON_PRETTY_PRINT); ?>;
         let currentModalPNR = '';
 
         // Initialize the dashboard
@@ -257,23 +218,12 @@ try {
             document.getElementById('refresh-btn').addEventListener('click', loadApplications);
             document.getElementById('new-application').addEventListener('click', createNewApplication);
             document.getElementById('create-first-app').addEventListener('click', createNewApplication);
-            document.getElementById('close-modal').addEventListener('click', closeModal);
-            document.getElementById('cancel-modal').addEventListener('click', closeModal);
-            document.getElementById('continue-application').addEventListener('click', continueApplication);
-
-            // Close modal when clicking outside
-            document.getElementById('application-modal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal();
-                }
-            });
         }
 
-        // Load all applications from localStorage
+        // Load all applications from localStorage and database
         function loadApplications() {
-            applications = <?php echo json_encode($applications, JSON_PRETTY_PRINT); ?>;
-
             // Merge with localStorage applications
+            const localStorageApps = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith("usaVisaApplication-")) {
@@ -281,9 +231,7 @@ try {
                         const appData = JSON.parse(localStorage.getItem(key));
                         if (appData) {
                             appData.source = "local";
-                            if (!applications.some(a => a.pnr === appData.pnr)) {
-                                applications.push(appData);
-                            }
+                            localStorageApps.push(appData);
                         }
                     } catch (e) {
                         console.error("Error parsing localStorage:", key, e);
@@ -291,14 +239,21 @@ try {
                 }
             }
 
-            // Sort by latest timestamp
-            applications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            // Combine database and localStorage applications
+            const allApplications = [...applications];
+            localStorageApps.forEach(localApp => {
+                if (!allApplications.some(dbApp => dbApp.pnr === localApp.pnr)) {
+                    allApplications.push(localApp);
+                }
+            });
 
+            // Sort by latest timestamp
+            allApplications.sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
+
+            applications = allApplications;
             renderApplications();
             updateStats();
         }
-
-
 
         // Render the applications list
         function renderApplications() {
@@ -312,14 +267,13 @@ try {
             }
 
             noApplications.classList.add('hidden');
-            // console.log(applications);
 
             let html = '';
             applications.forEach((app, index) => {
                 const completedCount = app.applicants ? app.applicants.filter(a => a.completed).length : 0;
                 const totalApplicants = app.totalApplicants || 1;
                 const progress = Math.round((completedCount / totalApplicants) * 100);
-                const lastUpdated = new Date(app.timestamp || Date.now()).toLocaleDateString();
+                const lastUpdated = new Date(app.timestamp || app.created_at || Date.now()).toLocaleDateString();
 
                 // Determine status
                 let status, statusClass, statusText;
@@ -340,11 +294,11 @@ try {
                 html += `
                     <div class="application-card bg-white border border-gray-200 rounded-lg p-5 fade-in">
                         <div class="flex flex-col md:flex-row md:items-center justify-between">
-                            <div class="flex-1 mb-4 me-4 md:mb-0">
+                            <div class="flex-1 mb-4 md:mb-0 md:mr-4">
                                 <div class="flex items-start justify-between">
                                     <div>
                                         <h3 class="font-bold text-gray-800 text-lg">
-                                            ${app.pnr || 'Unknown PNR'} || ${app.nameOfApplicant || ''}
+                                            ${app.pnr || 'Unknown PNR'}
                                             ${app.source === 'local' ? '<span class="ml-2 text-xs px-2 py-0.5 bg-yellow-200 text-yellow-800 rounded-full">Local</span>' : ''}
                                         </h3>
                                         <div class="flex flex-wrap items-center mt-2 text-sm text-gray-600 gap-2">
@@ -416,41 +370,37 @@ try {
         // Calculate progress for an individual applicant
         function calculateApplicantProgress(applicant) {
             if (!applicant) return 0;
+            if (applicant.completed) return 100;
 
-            // Count completed fields (simplified approach)
-            let completedFields = 0;
+            // Simple progress calculation based on filled fields
+            let filledFields = 0;
             let totalFields = 0;
 
-            // Check passport info
-            if (applicant.passportInfo) {
-                if (applicant.passportInfo.pp_given_name) completedFields++;
-                if (applicant.passportInfo.pp_family_name) completedFields++;
-                if (applicant.passportInfo.pp_number) completedFields++;
-                totalFields += 3;
-            }
+            // Check each section for data
+            const sections = ['passportInfo', 'contactInfo', 'travelInfo', 'familyInfo', 'employmentInfo', 'educationalInfo'];
+            
+            sections.forEach(section => {
+                if (applicant[section]) {
+                    const sectionData = applicant[section];
+                    const fields = Object.keys(sectionData).filter(key => 
+                        sectionData[key] !== null && 
+                        sectionData[key] !== undefined && 
+                        sectionData[key] !== '' &&
+                        sectionData[key] !== false
+                    );
+                    filledFields += fields.length;
+                    totalFields += Object.keys(sectionData).length;
+                }
+            });
 
-            // Check contact info
-            if (applicant.contactInfo) {
-                if (applicant.contactInfo.emails && applicant.contactInfo.emails[0]) completedFields++;
-                if (applicant.contactInfo.phones && applicant.contactInfo.phones[0]) completedFields++;
-                if (applicant.contactInfo.addresses && applicant.contactInfo.addresses[0] && applicant.contactInfo.addresses[0].line1) completedFields++;
-                totalFields += 3;
-            }
-
-            // Check other sections
-            if (applicant.familyInfo && applicant.familyInfo.relationshipStatus) completedFields++;
-            if (applicant.employmentInfo && applicant.employmentInfo.employmentStatus) completedFields++;
-            if (applicant.travelInfo && applicant.travelInfo.visitMainReason) completedFields++;
-            totalFields += 3;
-
-            return totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
+            return totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
         }
 
         // Update dashboard statistics
         function updateStats() {
             const totalApplications = applications.length;
             const completedApplications = applications.filter(app => {
-                if (!app.applicants) return false;
+                if (!app.applicants || app.applicants.length === 0) return false;
                 return app.applicants.every(applicant => applicant.completed);
             }).length;
             const inProgressApplications = totalApplications - completedApplications;
@@ -460,112 +410,18 @@ try {
             document.getElementById('inprogress-applications').textContent = inProgressApplications;
         }
 
-        // Show application details in modal
+        // Show application details
         function showApplicationDetails(pnr) {
             window.location.href = `show.php?pnr=${encodeURIComponent(pnr)}`;
-            // const application = applications.find(app => app.pnr === pnr);
-            // if (!application) {
-            //     alert('Application not found!');
-            //     return;
-            // }
-
-            // currentModalPNR = pnr;
-            // const modalContent = document.getElementById('modal-content');
-
-            // let html = `
-            //     <div class="space-y-6">
-            //         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            //             <div>
-            //                 <h4 class="font-medium text-gray-700">Application PNR</h4>
-            //                 <p class="text-gray-800 font-mono">${application.pnr}</p>
-            //             </div>
-            //             <div>
-            //                 <h4 class="font-medium text-gray-700">Applicants</h4>
-            //                 <p class="text-gray-800">${application.totalApplicants || 1}</p>
-            //             </div>
-            //             <div>
-            //                 <h4 class="font-medium text-gray-700">Created</h4>
-            //                 <p class="text-gray-800">${new Date(application.timestamp).toLocaleDateString()}</p>
-            //             </div>
-            //             <div>
-            //                 <h4 class="font-medium text-gray-700">Status</h4>
-            //                 <p class="text-gray-800">${application.applicants && application.applicants.every(a => a.completed) ? 'Complete' : 'In Progress'}</p>
-            //             </div>
-            //         </div>
-
-            //         <div>
-            //             <h4 class="font-medium text-gray-700 mb-3">Applicant Details</h4>
-            //             <div class="space-y-4">
-            // `;
-
-            // if (application.applicants) {
-            //     application.applicants.forEach((applicant, index) => {
-            //         const progress = calculateApplicantProgress(applicant);
-            //         html += `
-            //             <div class="border border-gray-200 rounded-lg p-4">
-            //                 <div class="flex justify-between items-center mb-2">
-            //                     <h5 class="font-medium text-gray-800">Applicant ${index + 1}</h5>
-            //                     <span class="text-sm ${applicant.completed ? 'text-green-600' : 'text-amber-600'}">
-            //                         ${applicant.completed ? 'Complete' : `${progress}% Complete`}
-            //                     </span>
-            //                 </div>
-            //                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-            //                     <div>
-            //                         <span class="text-gray-500">Name:</span>
-            //                         <span class="text-gray-800 ml-2">${applicant.passportInfo?.pp_given_name || 'Not provided'} ${applicant.passportInfo?.pp_family_name || ''}</span>
-            //                     </div>
-            //                     <div>
-            //                         <span class="text-gray-500">Passport:</span>
-            //                         <span class="text-gray-800 ml-2">${applicant.passportInfo?.pp_number || 'Not provided'}</span>
-            //                     </div>
-            //                     <div>
-            //                         <span class="text-gray-500">Email:</span>
-            //                         <span class="text-gray-800 ml-2">${applicant.contactInfo?.emails?.[0] || 'Not provided'}</span>
-            //                     </div>
-            //                     <div>
-            //                         <span class="text-gray-500">Phone:</span>
-            //                         <span class="text-gray-800 ml-2">${applicant.contactInfo?.phones?.[0] || 'Not provided'}</span>
-            //                     </div>
-            //                 </div>
-            //             </div>
-            //         `;
-            //     });
-            // }
-
-            // html += `
-            //             </div>
-            //         </div>
-            //     </div>
-            // `;
-
-            // modalContent.innerHTML = html;
-            // document.getElementById('application-modal').classList.remove('hidden');
         }
 
-        // Close the modal
-        function closeModal() {
-            document.getElementById('application-modal').classList.add('hidden');
-            currentModalPNR = '';
-        }
-
-        // Continue application from modal
-        function continueApplication() {
-            if (currentModalPNR) {
-                continueApplicationDirect(currentModalPNR);
-            }
-        }
-
-        // Continue application directly - FIXED VERSION
+        // Continue application directly
         function continueApplicationDirect(pnr) {
-            console.log('Redirecting to application:', pnr);
-
-            // Redirect to application form with PNR parameter
             window.location.href = `application-form.php?pnr=${encodeURIComponent(pnr)}`;
         }
 
         // Create a new application
         function createNewApplication() {
-            // Redirect to application form without parameters for new application
             window.location.href = 'application-form.php';
         }
 
@@ -576,15 +432,18 @@ try {
             }
 
             // Remove from localStorage
-            localStorage.removeItem('usVisaApplication');
+            localStorage.removeItem('usaVisaApplication-' + pnr);
+
+            // Remove from displayed list
+            applications = applications.filter(app => app.pnr !== pnr);
 
             // Show success message
             alert(`Application ${pnr} has been deleted.`);
 
             // Reload the applications list
-            loadApplications();
+            renderApplications();
+            updateStats();
         }
     </script>
 </body>
-
 </html>

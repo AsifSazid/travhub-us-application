@@ -1,0 +1,100 @@
+Array
+(
+    [id] => APPT-003
+    [pnr] => TRH-US-PNR-698971K354
+    [user_pnr] => TRH-US-PNR-698971K354-APPT-003
+    [completed] => 1
+    [passportInfo] => Array
+        (
+        )
+
+    [nidInfo] => Array
+        (
+        )
+
+    [contactInfo] => Array
+        (
+            [emails] => Array
+                (
+                    [0] => 
+                )
+
+            [phones] => Array
+                (
+                    [0] => 
+                )
+
+            [socialMedia] => Array
+                (
+                    [0] => Array
+                        (
+                            [platform] => 
+                            [username] => 
+                        )
+
+                )
+
+        )
+
+    [familyInfo] => Array
+        (
+            [familyMembers] => Array
+                (
+                )
+
+        )
+
+    [accommodationDetails] => Array
+        (
+        )
+
+    [employmentInfo] => Array
+        (
+            [previousEmployment] => Array
+                (
+                )
+
+        )
+
+    [incomeExpenditure] => Array
+        (
+        )
+
+    [travelInfo] => Array
+        (
+            [locations] => Array
+                (
+                    [0] => Array
+                        (
+                            [address_line_1] => 
+                            [address_line_2] => 
+                            [city] => 
+                            [state] => 
+                            [zip_code] => 
+                        )
+
+                )
+
+        )
+
+    [travelHistory] => Array
+        (
+        )
+
+    [usContactInfo] => Array
+        (
+        )
+
+    [educationalInfo] => Array
+        (
+            [institutions] => Array
+                (
+                )
+
+        )
+
+    [otherInfo] => Array
+        (
+        )
+
+)

@@ -12,10 +12,9 @@ if (!$data) {
     exit;
 }
 
-require 'db_connection.php'; // your PDO connection
+require 'db_connection.php';
 
 try {
-
     // Insert applications table
     $stmt = $pdo->prepare("INSERT INTO applications (pnr, name_of_applicant, total_applicants, status, timestamp) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([
@@ -23,61 +22,63 @@ try {
         $data['nameOfApplicant'],
         $data['totalApplicants'],
         $data['status'],
-        date('Y-m-d H:i:s', strtotime($data['timestamp']))
+        date('Y-m-d H:i:s', strtotime($data['submittedAt']))
     ]);
 
-    // Insert applicants
+    // Insert applicants with new structured columns
     foreach ($data['applicants'] as $applicant) {
+        // Map frontend data to database columns
+        $personal_information = json_encode([
+            'passportInfo' => $applicant['passportInfo'] ?? [],
+            'contactInfo' => $applicant['contactInfo'] ?? []
+        ]);
+        
+        $travel_information = json_encode($applicant['travelInfo'] ?? []);
+        $passport_information = json_encode($applicant['passportInfo'] ?? []);
+        $travel_companion_information = json_encode($applicant['travelInfo'] ?? []); // TCI is part of travelInfo
+        $previous_us_travel = json_encode($applicant['travelHistory'] ?? []);
+        $us_contact_information = json_encode($applicant['usContactInfo'] ?? []);
+        $family_member_information = json_encode($applicant['familyInfo'] ?? []);
+        $work_information = json_encode($applicant['employmentInfo'] ?? []);
+        $educational_information = json_encode($applicant['educationalInfo'] ?? []);
+        $other_information = json_encode($applicant['otherInfo'] ?? []);
 
-        // Debug dump (optional)
-        file_put_contents("debug-applicant.txt", print_r($applicant, true));
-
-        // Convert arrays to JSON (safe handling)
-        $passport_info         = json_encode($applicant['passportInfo'] ?? []);
-        $nid_info              = json_encode($applicant['nidInfo'] ?? []);
-        $contact_info          = json_encode($applicant['contactInfo'] ?? []);
-        $family_info           = json_encode($applicant['familyInfo'] ?? []);
-        $accommodation_details = json_encode($applicant['accommodationDetails'] ?? []);
-        $employment_info       = json_encode($applicant['employmentInfo'] ?? []);
-        $income_expenditure    = json_encode($applicant['incomeExpenditure'] ?? []);
-        $travel_info           = json_encode($applicant['travelInfo'] ?? []);
-        $travel_history        = json_encode($applicant['travelHistory'] ?? []);
-
-        // Prepare insert
+        // Prepare insert with all sections
         $stmt = $pdo->prepare("
-        INSERT INTO applicants (
-            pnr,
-            user_pnr,
-            completed,
-            passport_info,
-            nid_info,
-            contact_info,
-            family_info,
-            accommodation_details,
-            employment_info,
-            income_expenditure,
-            travel_info,
-            travel_history
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
+            INSERT INTO applicants (
+                pnr,
+                user_pnr,
+                completed,
+                personal_information,
+                travel_information,
+                passport_information,
+                travel_companion_information,
+                previous_us_travel,
+                us_contact_information,
+                family_member_information,
+                work_information,
+                educational_information,
+                other_information
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
 
         // Execute insert
         $stmt->execute([
             $applicant['pnr'] ?? null,
             $applicant['user_pnr'] ?? null,
             ($applicant['completed'] ?? false) ? 1 : 0,
-            $passport_info,
-            $nid_info,
-            $contact_info,
-            $family_info,
-            $accommodation_details,
-            $employment_info,
-            $income_expenditure,
-            $travel_info,
-            $travel_history
+            $personal_information,
+            $travel_information,
+            $passport_information,
+            $travel_companion_information,
+            $previous_us_travel,
+            $us_contact_information,
+            $family_member_information,
+            $work_information,
+            $educational_information,
+            $other_information
         ]);
     }
-
 
     echo json_encode(["status" => "success", "message" => "Data saved successfully"]);
 } catch (Exception $e) {

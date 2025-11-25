@@ -9,13 +9,13 @@ if ($pnr) {
     $stmt = $pdo->prepare("SELECT * FROM applications WHERE pnr = ?");
     $stmt->execute([$pnr]);
     $application = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if ($application) {
         // 2. Fetch all applicants from DATABASE
         $stmt2 = $pdo->prepare("SELECT * FROM applicants WHERE pnr = ?");
         $stmt2->execute([$pnr]);
         $appRows = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $applicants = [];
         foreach ($appRows as $ap) {
             $applicants[] = [
@@ -137,6 +137,7 @@ if ($pnr) {
         .conditional-block.active {
             display: block;
         }
+
         .preview-section {
             border: 1px solid #e5e7eb;
             border-radius: 0.5rem;
@@ -399,11 +400,11 @@ if ($pnr) {
         function initializeApplication() {
             const urlParams = new URLSearchParams(window.location.search);
             const pnrFromUrl = urlParams.get('pnr');
-            
-            console.log('Initializing application...');
-            console.log('PNR from URL:', pnrFromUrl);
-            console.log('State PNR:', state.pnr);
-            
+
+            // console.log('Initializing application...');
+            // console.log('PNR from URL:', pnrFromUrl);
+            // console.log('State PNR:', state.pnr);
+
             if (pnrFromUrl) {
                 loadApplicationByPNR(pnrFromUrl);
             } else if (state.pnr) {
@@ -416,7 +417,7 @@ if ($pnr) {
 
         function loadApplicationByPNR(pnr) {
             const localData = localStorage.getItem('usaVisaApplication-' + pnr);
-            
+
             if (localData) {
                 const applicationData = JSON.parse(localData);
                 loadApplicationData(applicationData);
@@ -437,7 +438,7 @@ if ($pnr) {
             state.applicants = applicationData.applicants;
             state.currentApplicant = applicationData.currentApplicant || 0;
             state.currentStep = applicationData.currentStep || 0;
-            
+
             initializeFormFromState();
         }
 
@@ -522,39 +523,275 @@ if ($pnr) {
                 pnr: state.pnr,
                 user_pnr: `${state.pnr}-APPT-${(index + 1).toString().padStart(3, '0')}`,
                 completed: false,
-                passportInfo: {},
-                nidInfo: {},
+
+                // Personal Information (PI)
+                passportInfo: {
+                    pi_traveler: '',
+                    pi_sur_name: '',
+                    pi_given_name: '',
+                    pi_have_other_name: false,
+                    pi_other_sur_name: '',
+                    pi_other_given_name: '',
+                    pi_gender: '',
+                    pi_marital_status: '',
+                    pi_dob: '',
+                    pi_pob: '',
+                    pi_cob: '',
+                    pi_nid: '',
+                    pi_have_other_nationality: false,
+                    pi_other_nationality_country: '',
+                    pi_have_other_country_paasport: false,
+                    pi_other_country_passport: '',
+                    pi_have_other_permanent_residence: false,
+                    pi_other_permanent_residence_country: ''
+                },
+
+                // Contact Information
                 contactInfo: {
+                    // Address
+                    pi_address_line_1: '',
+                    pi_address_line_2: '',
+                    pi_address_city: '',
+                    pi_address_state: '',
+                    pi_address_zip_code: '',
+                    pi_address_country: '',
+
+                    // Mailing Address
+                    is_same_mailing_address: true,
+                    pi_mail_address_line_1: '',
+                    pi_mail_address_line_2: '',
+                    pi_mail_address_city: '',
+                    pi_mail_address_state: '',
+                    pi_mail_address_zip_code: '',
+                    pi_mail_address_country: '',
+
+                    // Contact Numbers
+                    pi_primary_no: '',
+                    pi_secondary_no: '',
+                    pi_work_no: '',
+                    otherPhones: [''],
+
+                    // Email & Social
                     emails: [''],
-                    phones: [''],
                     socialMedia: [{
                         platform: '',
                         username: ''
                     }]
                 },
-                familyInfo: {
-                    familyMembers: []
-                },
-                accommodationDetails: {},
-                employmentInfo: {
-                    previousEmployment: []
-                },
-                incomeExpenditure: {},
+
+                // Travel Information (TI)
                 travelInfo: {
+                    ti_travel_purpose: '',
+                    ti_have_travel_plan: '',
+                    // No travel plan fields
+                    ti_intended_arrival_date: '',
+                    ti_stay_length: '',
+                    ti_length_type: '',
+                    // Yes travel plan fields  
+                    ti_arrival_date: '',
+                    ti_arrival_flight_no: '',
+                    ti_arrival_city: '',
+                    ti_departure_date: '',
+                    ti_departure_flight_no: '',
+                    ti_departure_city: '',
+
+                    // Locations
                     locations: [{
                         address_line_1: '',
                         address_line_2: '',
                         city: '',
                         state: '',
                         zip_code: ''
+                    }],
+
+                    // Payment
+                    trip_payment: '',
+                    // Other person payment
+                    trip_paying_person_surname: '',
+                    ti_trip_paying_person_given_name: '',
+                    ti_trip_paying_person_telephone: '',
+                    ti_trip_paying_person_email: '',
+                    _trip_paying_person_relationship: '',
+                    trip_paying_person_have_same_address: true,
+                    ti_trip_paying_person_address_line_1: '',
+                    ti_trip_paying_person_address_line_2: '',
+                    ti_trip_paying_person_address_city: '',
+                    ti_trip_paying_person_address_state: '',
+                    ti_trip_paying_person_address_zip_code: '',
+                    trip_paying_person_address_country: '',
+
+                    // Travel Companion (TCI)
+                    tci_have_anyone: false,
+                    tci_surname: '',
+                    tci_given_name: '',
+                    tci_relationship: '',
+                    tci_have_group: false,
+                    tci_group_name: ''
+                },
+
+                // Passport Information (PP)
+                passportInfo: {
+                    pp_type: '',
+                    pp_number: '',
+                    pp_issue_date: '',
+                    pp_expiry_date: '',
+                    pp_issuing_authority: '',
+                    pp_issued_city: '',
+                    pp_have_stolen: false,
+                    pp_lost_passport_no: '',
+                    pp_lost_passport_authority: '',
+                    pp_lost_passport_explanation: ''
+                },
+
+                // Previous US Travel (PUST)
+                travelHistory: {
+                    pust_have_ever_issued: false,
+                    pust_last_issued_visa_date: '',
+                    pust_visa_no: '',
+                    pust_remember_visa_no: false,
+                    pust_have_applied_same_visa: false,
+                    pust_have_applied_same_country: false,
+                    pust_have_travelled_before: false,
+                    previousTravels: [{
+                        arrival_date: '',
+                        staying_length: ''
+                    }],
+                    pust_have_social_security_no: false,
+                    pust_social_security_no: '',
+                    pust_have_us_tin: false,
+                    pust_us_tin: '',
+                    pust_have_us_driving_license: false,
+                    driverLicenses: [{
+                        license_no: '',
+                        state: ''
+                    }],
+                    pust_have_ten_fingerprint: false,
+                    pust_have_refused_us_visa: false,
+                    pust_visa_refusal_explain: '',
+                    pust_have_legal_permanent_resident: false,
+                    pust_have_us_visa_lost: false,
+                    pust_have_us_visa_cancelled: false
+                },
+
+                // US Contact Information (USCI)
+                usContactInfo: {
+                    usci_contact_type: '',
+                    // Person contact
+                    usci_contact_person_surname: '',
+                    usci_contact_person_given_name: '',
+                    'usci contact person telephone': '',
+                    'usci contact person email': '',
+                    'usci contact person relationship': '',
+                    'usci contact person address line 1': '',
+                    'usci contact person address line 2': '',
+                    'usci contact person address city': '',
+                    'usci contact person address state': '',
+                    'usci contact person address zip code': '',
+                    // Company contact (same fields reused)
+                    usci_contact_company_name: '',
+                    'usci contact company telephone': '',
+                    'usci contact company email': '',
+                    'usci contact company relationship': '',
+                    // Hotel contact
+                    usci_contact_hotel_name: ''
+                },
+
+                // Family Information (FM)
+                familyInfo: {
+                    familyMembers: [{
+                        relation: '',
+                        given_name: '',
+                        family_name: '',
+                        dob: '',
+                        nationality: '',
+                        in_usa: false,
+                        person_status: '',
+                        // Spouse specific
+                        pob: '',
+                        boc_country: '',
+                        spouse_telephone: '',
+                        spouse_email: '',
+                        have_same_address: '',
+                        spouse_address_line_1: '',
+                        spouse_address_line_2: '',
+                        spouse_address_city: '',
+                        spouse_address_state: '',
+                        spouse_address_zip_code: '',
+                        spouse_address_country: ''
                     }]
                 },
-                travelHistory: {},
-                usContactInfo: {},
-                educationalInfo: {
-                    institutions: []
+
+                // Work Information (WI)
+                employmentInfo: {
+                    wi_primary_occupation_type: '',
+                    // Employment fields
+                    wi_company_or_school_name: '',
+                    wi_salary: '',
+                    wi_your_duties: '',
+                    wi_company_or_school_address_line_1: '',
+                    wi_company_or_school_address_line_2: '',
+                    wi_company_or_school_address_city: '',
+                    wi_company_or_school_address_state: '',
+                    wi_company_or_school_address_zip_code: '',
+                    wi_company_or_school_address_country: '',
+                    wi_company_or_school_address_telephone: '',
+
+                    have_previous_experience: false,
+                    previousEmployment: [{
+                        wi_pre_company_name: '',
+                        wi_pre_company_job_title: '',
+                        wi_pre_company_supervisor_surname: '',
+                        wi_pre_company_supervisor_given_name: '',
+                        wi_pre_employment_started: '',
+                        wi_pre_employment_ended: '',
+                        wi_pre_company_salary: '',
+                        wi_pre_company_address_line_1: '',
+                        wi_pre_company_address_line_2: '',
+                        wi_pre_company_address_city: '',
+                        wi_pre_company_address_state: '',
+                        wi_pre_company_address_zip_code: '',
+                        wi_pre_company_address_country: '',
+                        wi_pre_company_address_telephone: '',
+                        wi_pre_company_duties: ''
+                    }]
                 },
-                otherInfo: {}
+
+                // Educational Information (EDI)
+                educationalInfo: {
+                    edi_have_attended_secondary_level: false,
+                    institutions: [{
+                        name: '',
+                        course: '',
+                        attendanceFrom: '',
+                        attendanceTo: '',
+                        edi_institution_address_line_1: '',
+                        edi_institution_address_line_2: '',
+                        edi_institution_address_city: '',
+                        edi_institution_address_state: '',
+                        edi_institution_address_zip_code: '',
+                        edi_institution_address_country: ''
+                    }]
+                },
+
+                // Other Information (OI)
+                otherInfo: {
+                    oi_spoken_language_list: '',
+                    oi_have_travel_country_5years: false,
+                    oi_travelled_country: [],
+                    oi_have_you_belong_orgntion: false,
+                    oi_organization_name: [],
+                    oi_have_special_skills: false,
+                    oi_special_skills: '',
+                    oi_have_served_military: false,
+                    oi_military_service: [{
+                        oi_sm_country_name: '',
+                        oi_sm_service_branch: '',
+                        oi_sm_rank: '',
+                        oi_militay_speciality: '',
+                        oi_sm_serve_from: '',
+                        oi_sm_serve_to: ''
+                    }]
+                }
             };
         }
 
@@ -2131,7 +2368,7 @@ if ($pnr) {
                 };
             });
         }
-    
+
         function generateDriverLicenseFields(licenses) {
             return licenses.map((license, index) => `
                 <div class="driver-license-field border-b pb-4 mb-4">
@@ -2499,7 +2736,7 @@ if ($pnr) {
                 toggleContactTypeFields(contactTypeSelect.value);
             }
         }
-        
+
         // Family Member Information Step (Based on Excel FM section)
         function generateFamilyInfoStep(applicant) {
             const fm = applicant.familyInfo || {};
@@ -2549,7 +2786,7 @@ if ($pnr) {
             }
             state.applicants[state.currentApplicant][scope][arrayName][index][fieldName] = value;
             saveToLocalStorage();
-            
+
             // Update UI for conditional fields
             setTimeout(() => {
                 const member = state.applicants[state.currentApplicant][scope][arrayName][index];
@@ -2797,14 +3034,14 @@ if ($pnr) {
         function addFamilyMemberField() {
             const container = document.getElementById('family-member-fields');
             const index = container.children.length;
-            
+
             // Add new empty member to data structure
             if (!state.applicants[state.currentApplicant].familyInfo.familyMembers) {
                 state.applicants[state.currentApplicant].familyInfo.familyMembers = [];
             }
             state.applicants[state.currentApplicant].familyInfo.familyMembers.push({});
             saveToLocalStorage();
-            
+
             // Regenerate the entire fields to ensure proper indexing
             const familyMembers = state.applicants[state.currentApplicant].familyInfo.familyMembers;
             container.innerHTML = generateFamilyMemberFields(familyMembers);
@@ -2816,7 +3053,7 @@ if ($pnr) {
                 // Remove from data structure
                 state.applicants[state.currentApplicant].familyInfo.familyMembers.splice(index, 1);
                 saveToLocalStorage();
-                
+
                 // Regenerate fields
                 const container = document.getElementById('family-member-fields');
                 const familyMembers = state.applicants[state.currentApplicant].familyInfo.familyMembers;
@@ -2833,7 +3070,7 @@ if ($pnr) {
                 handleSpouseAddressChange(index, member.have_same_address);
             });
         }
-        
+
         // Work Information Step (Based on Excel WI section)
         function generateWorkInfoStep(applicant) {
             const wi = applicant.employmentInfo || {};
@@ -3057,11 +3294,11 @@ if ($pnr) {
         function handleOccupationChange(value) {
             const isEmployment = isEmploymentType(value);
             const isStudent = value === 'Student';
-            
+
             toggleConditionalBlock('employment-fields', isEmployment);
             toggleConditionalBlock('student-fields', isStudent);
             toggleConditionalBlock('previous-employment-toggle', isEmployment);
-            
+
             // Hide previous employment if not employment type
             if (!isEmployment) {
                 toggleConditionalBlock('previous-employment', false);
@@ -3216,15 +3453,19 @@ if ($pnr) {
 
         // Keep the same add/remove functions as before
         function addPreviousEmploymentField() {
+            const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.employmentInfo.previousEmployment) { // workInfo -> employmentInfo
+                applicant.employmentInfo.previousEmployment = [];
+            }
             const container = document.getElementById('previous-employment-fields');
             const index = container.children.length;
-            
+
             if (!state.applicants[state.currentApplicant].employmentInfo.previousEmployment) {
                 state.applicants[state.currentApplicant].employmentInfo.previousEmployment = [];
             }
             state.applicants[state.currentApplicant].employmentInfo.previousEmployment.push({});
             saveToLocalStorage();
-            
+
             const previousEmployment = state.applicants[state.currentApplicant].employmentInfo.previousEmployment;
             container.innerHTML = generatePreviousEmploymentFields(previousEmployment);
         }
@@ -3234,7 +3475,7 @@ if ($pnr) {
             if (field) {
                 state.applicants[state.currentApplicant].employmentInfo.previousEmployment.splice(index, 1);
                 saveToLocalStorage();
-                
+
                 const container = document.getElementById('previous-employment-fields');
                 const previousEmployment = state.applicants[state.currentApplicant].employmentInfo.previousEmployment;
                 container.innerHTML = generatePreviousEmploymentFields(previousEmployment);
@@ -3536,7 +3777,7 @@ if ($pnr) {
             if (!state.applicants[state.currentApplicant][scope][arrayName]) {
                 state.applicants[state.currentApplicant][scope][arrayName] = [];
             }
-            
+
             // For travelled countries, we're storing just the country code as string
             state.applicants[state.currentApplicant][scope][arrayName][index] = value;
             saveToLocalStorage();
@@ -3549,27 +3790,27 @@ if ($pnr) {
             if (!state.applicants[state.currentApplicant].otherInfo.oi_travelled_country) {
                 state.applicants[state.currentApplicant].otherInfo.oi_travelled_country = [];
             }
-            
+
             state.applicants[state.currentApplicant].otherInfo.oi_travelled_country.push('');
-            
+
             const container = document.getElementById('travelled-countries-container');
             if (container) {
                 container.innerHTML = generateTravelledCountryFields(state.applicants[state.currentApplicant].otherInfo.oi_travelled_country);
             }
-            
+
             saveToLocalStorage();
         }
 
         function removeTravelledCountryField(index) {
-            if (state.applicants[state.currentApplicant].otherInfo && 
+            if (state.applicants[state.currentApplicant].otherInfo &&
                 state.applicants[state.currentApplicant].otherInfo.oi_travelled_country) {
                 state.applicants[state.currentApplicant].otherInfo.oi_travelled_country.splice(index, 1);
-                
+
                 const container = document.getElementById('travelled-countries-container');
                 if (container) {
                     container.innerHTML = generateTravelledCountryFields(state.applicants[state.currentApplicant].otherInfo.oi_travelled_country);
                 }
-                
+
                 saveToLocalStorage();
             }
         }
@@ -3578,7 +3819,7 @@ if ($pnr) {
             if (!selectedCountries || !Array.isArray(selectedCountries)) {
                 selectedCountries = [''];
             }
-            
+
             return selectedCountries.map((countryCode, index) => `
                 <div class="flex items-center space-x-2 mb-2">
                     <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -3604,7 +3845,7 @@ if ($pnr) {
             if (!state.applicants[state.currentApplicant][scope][arrayName]) {
                 state.applicants[state.currentApplicant][scope][arrayName] = [];
             }
-            
+
             if (!state.applicants[state.currentApplicant][scope][arrayName][index]) {
                 state.applicants[state.currentApplicant][scope][arrayName][index] = {};
             }
@@ -3619,36 +3860,40 @@ if ($pnr) {
             if (!state.applicants[state.currentApplicant].otherInfo.oi_organization_name) {
                 state.applicants[state.currentApplicant].otherInfo.oi_organization_name = [];
             }
-            
-            state.applicants[state.currentApplicant].otherInfo.oi_organization_name.push({ name: '' });
-            
+
+            state.applicants[state.currentApplicant].otherInfo.oi_organization_name.push({
+                name: ''
+            });
+
             const container = document.getElementById('organizations-container');
             if (container) {
                 container.innerHTML = generateOrganizationFields(state.applicants[state.currentApplicant].otherInfo.oi_organization_name);
             }
-            
+
             saveToLocalStorage();
         }
 
         function removeOrganizationField(index) {
-            if (state.applicants[state.currentApplicant].otherInfo && 
+            if (state.applicants[state.currentApplicant].otherInfo &&
                 state.applicants[state.currentApplicant].otherInfo.oi_organization_name) {
                 state.applicants[state.currentApplicant].otherInfo.oi_organization_name.splice(index, 1);
-                
+
                 const container = document.getElementById('organizations-container');
                 if (container) {
                     container.innerHTML = generateOrganizationFields(state.applicants[state.currentApplicant].otherInfo.oi_organization_name);
                 }
-                
+
                 saveToLocalStorage();
             }
         }
 
         function generateOrganizationFields(organizations) {
             if (!organizations || !Array.isArray(organizations)) {
-                organizations = [{ name: '' }];
+                organizations = [{
+                    name: ''
+                }];
             }
-            
+
             return organizations.map((org, index) => `
                 <div class="flex items-center space-x-2 mb-2">
                     <input type="text" 
@@ -3671,7 +3916,7 @@ if ($pnr) {
             if (!state.applicants[state.currentApplicant][scope][arrayName]) {
                 state.applicants[state.currentApplicant][scope][arrayName] = [];
             }
-            
+
             if (!state.applicants[state.currentApplicant][scope][arrayName][index]) {
                 state.applicants[state.currentApplicant][scope][arrayName][index] = {};
             }
@@ -3686,7 +3931,7 @@ if ($pnr) {
             if (!state.applicants[state.currentApplicant].otherInfo.oi_military_service) {
                 state.applicants[state.currentApplicant].otherInfo.oi_military_service = [];
             }
-            
+
             state.applicants[state.currentApplicant].otherInfo.oi_military_service.push({
                 oi_sm_country_name: '',
                 oi_sm_service_branch: '',
@@ -3695,25 +3940,25 @@ if ($pnr) {
                 oi_sm_serve_from: '',
                 oi_sm_serve_to: ''
             });
-            
+
             const container = document.getElementById('military-service-container');
             if (container) {
                 container.innerHTML = generateMilitaryServiceFields(state.applicants[state.currentApplicant].otherInfo.oi_military_service);
             }
-            
+
             saveToLocalStorage();
         }
 
         function removeMilitaryServiceField(index) {
-            if (state.applicants[state.currentApplicant].otherInfo && 
+            if (state.applicants[state.currentApplicant].otherInfo &&
                 state.applicants[state.currentApplicant].otherInfo.oi_military_service) {
                 state.applicants[state.currentApplicant].otherInfo.oi_military_service.splice(index, 1);
-                
+
                 const container = document.getElementById('military-service-container');
                 if (container) {
                     container.innerHTML = generateMilitaryServiceFields(state.applicants[state.currentApplicant].otherInfo.oi_military_service);
                 }
-                
+
                 saveToLocalStorage();
             }
         }
@@ -3729,7 +3974,7 @@ if ($pnr) {
                     oi_sm_serve_to: ''
                 }];
             }
-            
+
             return serviceHistory.map((service, index) => `
                 <div class="border border-gray-300 p-4 rounded-lg mb-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -3789,8 +4034,8 @@ if ($pnr) {
                     </button>
                 </div>
             `).join('');
-        }        
-        
+        }
+
         // Helper functions for dynamic fields
         function generateEmailFields(emails) {
             return emails.map((email, index) => `
@@ -3872,8 +4117,7 @@ if ($pnr) {
                 applicant.contactInfo.emails = [''];
             }
             applicant.contactInfo.emails.push('');
-            generateFormSteps();
-            saveToLocalStorage();
+            saveToLocalStorage(); // ✅ localStorage-এ save করুন
         }
 
         function addSocialMediaField() {
@@ -3888,8 +4132,7 @@ if ($pnr) {
                 platform: '',
                 username: ''
             });
-            generateFormSteps();
-            saveToLocalStorage();
+            saveToLocalStorage(); // ✅ localStorage-এ save করুন
         }
 
         function addLocationField() {
@@ -3910,8 +4153,7 @@ if ($pnr) {
                 state: '',
                 zip_code: ''
             });
-            generateFormSteps();
-            saveToLocalStorage();
+            saveToLocalStorage(); // ✅ localStorage-এ save করুন
         }
 
         function addPreviousEmploymentField() {
@@ -3952,15 +4194,6 @@ if ($pnr) {
                 saveToLocalStorage();
             }
         }
-
-        // function removeSocialMediaField(index) {
-        //     const applicant = state.applicants[state.currentApplicant];
-        //     if (applicant.contactInfo.socialMedia && applicant.contactInfo.socialMedia.length > 1) {
-        //         applicant.contactInfo.socialMedia.splice(index, 1);
-        //         generateFormSteps();
-        //         saveToLocalStorage();
-        //     }
-        // }
 
         function removeLocationField(index) {
             const applicant = state.applicants[state.currentApplicant];
@@ -4004,7 +4237,7 @@ if ($pnr) {
                 applicant.contactInfo[field] = [];
             }
             applicant.contactInfo[field][index] = value;
-            saveToLocalStorage();
+            saveToLocalStorage(); // ✅ এই line অবশ্যই থাকতে হবে
         }
 
         function updateSocialMediaData(index, field, value) {
@@ -4045,6 +4278,9 @@ if ($pnr) {
 
         function updatePreviousEmploymentData(index, field, value) {
             const applicant = state.applicants[state.currentApplicant];
+            if (!applicant.employmentInfo.previousEmployment) { // workInfo -> employmentInfo
+                applicant.employmentInfo.previousEmployment = [];
+            }
             if (!applicant.employmentInfo.previousEmployment) {
                 applicant.employmentInfo.previousEmployment = [];
             }
@@ -4067,23 +4303,7 @@ if ($pnr) {
             saveToLocalStorage();
         }
 
-        function toggleTravelPlanFields(value) {
-            document.getElementById('no-travel-plan').classList.toggle('active', value === 'no');
-            document.getElementById('yes-travel-plan').classList.toggle('active', value === 'yes');
-        }
-
         // Utility functions
-        // function toggleConditionalBlock(blockId, show) {
-        //     const block = document.getElementById(blockId);
-        //     if (block) {
-        //         if (show) {
-        //             block.classList.add('active');
-        //         } else {
-        //             block.classList.remove('active');
-        //         }
-        //     }
-        // }
-
         // Updated toggle function to properly handle conditional blocks
         function toggleConditionalBlock(blockId, show) {
             const block = document.getElementById(blockId);
@@ -4103,41 +4323,8 @@ if ($pnr) {
                 state.applicants[state.currentApplicant][category] = {};
             }
             state.applicants[state.currentApplicant][category][field] = value;
-            saveToLocalStorage();
+            saveToLocalStorage(); // ✅ এই line অবশ্যই থাকতে হবে
         }
-
-        //PORE FELBO SHURU
-
-        // function nextStep() {
-        //     if (state.currentStep < state.totalSteps - 1) {
-        //         state.currentStep++;
-        //         generateFormSteps();
-        //         generateStepNavigation();
-        //         updateUI();
-        //     } else {
-        //         // Last step - show summary or move to next applicant
-        //         if (state.currentApplicant < state.totalApplicants - 1) {
-        //             document.getElementById('next-applicant-btn').classList.remove('hidden');
-        //             document.getElementById('next-btn').classList.add('hidden');
-        //         } else {
-        //             document.getElementById('submit-btn').classList.remove('hidden');
-        //             document.getElementById('next-btn').classList.add('hidden');
-        //         }
-        //     }
-        //     saveToLocalStorage();
-        // }
-
-        // function previousStep() {
-        //     if (state.currentStep > 0) {
-        //         state.currentStep--;
-        //         generateFormSteps();
-        //         generateStepNavigation();
-        //         updateUI();
-        //     }
-        //     saveToLocalStorage();
-        // }
-
-        //PORE FELBO SHESH
 
         // Update navigation for preview mode
         function updateNavigationForPreview() {
@@ -4145,7 +4332,7 @@ if ($pnr) {
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('next-applicant-btn').classList.add('hidden');
             document.getElementById('submit-btn').classList.add('hidden');
-            
+
             // Update step navigation to show preview as active
             const stepNavItems = document.querySelectorAll('.step-nav-item');
             stepNavItems.forEach((item, index) => {
@@ -4174,7 +4361,7 @@ if ($pnr) {
             document.getElementById('next-btn').classList.remove('hidden');
             document.getElementById('next-applicant-btn').classList.add('hidden');
             document.getElementById('submit-btn').classList.add('hidden');
-            
+
             generateStepNavigation();
         }
 
@@ -4185,13 +4372,13 @@ if ($pnr) {
                 state.currentStep = 0;
                 state.showPreview = false;
                 state.previewApplicant = null;
-                
+
                 generateFormSteps();
                 generateStepNavigation();
                 generateTabs();
                 updateUI();
                 saveToLocalStorage();
-                
+
                 // Scroll to top
                 window.scrollTo(0, 0);
             }
@@ -4205,51 +4392,51 @@ if ($pnr) {
         }
 
         // Submit entire application
+        // UPDATED submitEntireApplication() function
         function submitEntireApplication() {
-            // Show loading state
-            const submitBtn = document.getElementById('submit-btn') || document.querySelector('button[onclick*="showFinalSubmission"]');
+            const submitBtn = document.getElementById('submit-btn');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
             submitBtn.disabled = true;
 
-            // Prepare data for submission
             const submissionData = {
                 pnr: state.pnr,
                 applicants: state.applicants,
+                nameOfApplicant: state.applicants[0].passportInfo.pi_sur_name,
+                totalApplicants: state.totalApplicants,
+                status: "completed",
                 submittedAt: new Date().toISOString()
             };
 
-            // Submit to server (AJAX call)
-            fetch('server/submit_application.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submissionData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    showSubmissionSuccess();
-                    
-                    // Clear localStorage
-                    localStorage.removeItem('usaVisaApplication-' + state.pnr);
-                    
-                    // Redirect to success page after 3 seconds
+            console.log(submissionData);
+
+            fetch('server/submit-application.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(submissionData)
+                })
+                .then(response => response.json())
+                // .then(data => {
+                //     if (data.success) {
+                //     showSubmissionSuccess();
+                //     // Clear both localStorage AND database draft
+                //     localStorage.removeItem('usaVisaApplication-' + state.pnr);
+                //     }
+                // })
+                .then(response => response.json())
+                .then(data => {
                     setTimeout(() => {
                         window.location.href = 'application_success.php?pnr=' + state.pnr;
                     }, 3000);
-                } else {
-                    throw new Error(data.message || 'Submission failed');
-                }
-            })
-            .catch(error => {
-                console.error('Submission error:', error);
-                alert('Submission failed: ' + error.message);
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            });
+                })
+                .catch(error => {
+                    console.error('Submission error:', error);
+                    alert('Submission failed: ' + error.message);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
         }
 
         // Show submission success
@@ -4279,7 +4466,7 @@ if ($pnr) {
                     </div>
                 </div>
             `;
-            
+
             // Hide all navigation buttons
             document.getElementById('prev-btn').classList.add('hidden');
             document.getElementById('next-btn').classList.add('hidden');
@@ -4307,7 +4494,7 @@ if ($pnr) {
         function generateApplicantPreview(applicantIndex) {
             const formStepsContainer = document.getElementById('form-steps');
             const applicant = state.applicants[applicantIndex];
-            
+
             formStepsContainer.innerHTML = `
                 <div class="step active fade-in">
                     <div class="flex justify-between items-center mb-6">
@@ -4444,12 +4631,22 @@ if ($pnr) {
                 generateStepNavigation();
                 updateUI();
             } else {
-                // Last step of current applicant
-                // Mark current applicant as completed
+                // Last step - check if more applicants or show submit
                 state.applicants[state.currentApplicant].completed = true;
-                
-                // Show preview for this applicant
-                showApplicantPreview(state.currentApplicant);
+
+                if (state.currentApplicant < state.totalApplicants - 1) {
+                    // Show "Next Applicant" button
+                    document.getElementById('next-applicant-btn').classList.remove('hidden');
+                    document.getElementById('next-btn').classList.add('hidden');
+                    // Auto show preview for current applicant
+                    showApplicantPreview(state.currentApplicant);
+                } else {
+                    // Last applicant - show submit button
+                    document.getElementById('submit-btn').classList.remove('hidden');
+                    document.getElementById('next-btn').classList.add('hidden');
+                    // Auto show preview for last applicant
+                    showApplicantPreview(state.currentApplicant);
+                }
             }
             saveToLocalStorage();
         }
@@ -4480,9 +4677,19 @@ if ($pnr) {
         function switchApplicant(applicantIndex) {
             state.currentApplicant = applicantIndex;
             state.currentStep = 0;
+            state.showPreview = false; // IMPORTANT: Preview mode off korbe
+            state.previewApplicant = null;
+
             generateFormSteps();
             generateStepNavigation();
+            generateTabs();
             updateUI();
+
+            // Button visibility reset korbe
+            document.getElementById('next-btn').classList.remove('hidden');
+            document.getElementById('next-applicant-btn').classList.add('hidden');
+            document.getElementById('submit-btn').classList.add('hidden');
+
             saveToLocalStorage();
         }
 
@@ -4582,7 +4789,7 @@ if ($pnr) {
             } else {
                 const keys = Object.keys(localStorage);
                 const appKeys = keys.filter(key => key.startsWith('usaVisaApplication-'));
-                
+
                 if (appKeys.length > 0) {
                     // Load the first one
                     const firstAppKey = appKeys[0];
