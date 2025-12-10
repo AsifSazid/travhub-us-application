@@ -3549,20 +3549,18 @@ if ($pnr) {
                                    onchange="updateInstitutionData(${index}, 'attendanceTo', this.value)">
                         </div>
                         <div>
-                            <div>
-                                <label class="block text-gray-700 mb-2">School Address Line 1</label>
-                                <input type="text" name="edi_institution_address_line_1" 
-                                    value="${institution.edi_institution_address_line_1 || ''}" 
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateInstitutionData(${index}, 'edi_institution_address_line_1', this.value)">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 mb-2">School Address Line 2</label>
-                                <input type="text" name="edi_institution_address_line_2" 
-                                    value="${institution.edi_institution_address_line_2 || ''}" 
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateInstitutionData(${index}, 'edi_institution_address_line_2', this.value)">
-                            </div>
+                            <label class="block text-gray-700 mb-2">School Address Line 1</label>
+                            <input type="text" name="edi_institution_address_line_1" 
+                                value="${institution.edi_institution_address_line_1 || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateInstitutionData(${index}, 'edi_institution_address_line_1', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">School Address Line 2</label>
+                            <input type="text" name="edi_institution_address_line_2" 
+                                value="${institution.edi_institution_address_line_2 || ''}" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateInstitutionData(${index}, 'edi_institution_address_line_2', this.value)">
                         </div>
                         <div>
                             <div>
@@ -3585,13 +3583,13 @@ if ($pnr) {
                             <input type="text" name="edi_institution_address_zip_code" 
                                 value="${institution.edi_institution_address_zip_code || ''}" 
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                onchange="updateApplicantData('employmentInfo', 'edi_institution_address_zip_code', this.value)">
+                                onchange="updateInstitutionData(${index}, 'edi_institution_address_zip_code', this.value)">
                         </div>
                         <div>
                             <label class="block text-gray-700 mb-2">School Address Country</label>
                             <select name="edi_institution_address_country" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updatePreviousEmploymentArray('employmentInfo', 'previousEmployment', ${index}, 'edi_institution_address_country', this.value)">
+                                    onchange="updateInstitutionData(${index}, 'edi_institution_address_country', this.value)">
                                 <option value="">Select Country</option>
                                 ${countries.map(country => 
                                     `<option value="${country.code}" ${(institution.edi_institution_address_country === country.code) ? 'selected' : ''}>${country.name}</option>`
