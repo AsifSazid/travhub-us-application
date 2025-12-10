@@ -303,15 +303,13 @@ if ($pnr) {
     </div>
 
     <script>
+        // Country data - will be replaced with JSON API data
         let countries = []; // GLOBAL
 
         fetch('/server/countries.json')
             .then(r => r.json())
             .then(countryList => {
                 countries = countryList; // GLOBAL ভেরিয়েবল আপডেট হচ্ছে
-                console.log("Countries loaded:", countries);
-
-                // এখন countries ready → যদি লোড হবার সাথে সাথে কিছু রান করতে চাও:
                 generateFormSteps();
             })
             .catch(err => console.error('Error:', err));
@@ -856,12 +854,6 @@ if ($pnr) {
                     return '<p>Step content not defined.</p>';
             }
         }
-
-        // Country data - will be replaced with JSON API data
-
-
-        console.log(countries);
-
 
         // Social media platforms
         const socialMediaPlatforms = [
@@ -3562,14 +3554,14 @@ if ($pnr) {
                                 <input type="text" name="edi_institution_address_line_1" 
                                     value="${institution.edi_institution_address_line_1 || ''}" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateApplicantData('employmentInfo', 'edi_institution_address_line_1', this.value)">
+                                    onchange="updateInstitutionData(${index}, 'edi_institution_address_line_1', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">School Address Line 2</label>
                                 <input type="text" name="edi_institution_address_line_2" 
                                     value="${institution.edi_institution_address_line_2 || ''}" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateApplicantData('employmentInfo', 'edi_institution_address_line_2', this.value)">
+                                    onchange="updateInstitutionData(${index}, 'edi_institution_address_line_2', this.value)">
                             </div>
                         </div>
                         <div>
@@ -3578,14 +3570,14 @@ if ($pnr) {
                                 <input type="text" name="edi_institution_address_city" 
                                     value="${institution.edi_institution_address_city || ''}" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateApplicantData('employmentInfo', 'edi_institution_address_city', this.value)">
+                                    onchange="updateInstitutionData(${index}, 'edi_institution_address_city', this.value)">
                             </div>
                             <div>
                                 <label class="block text-gray-700 mb-2">School Address State</label>
                                 <input type="text" name="edi_institution_address_state" 
                                     value="${institution.edi_institution_address_state || ''}" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onchange="updateApplicantData('employmentInfo', 'edi_institution_address_state', this.value)">
+                                    onchange="updateInstitutionData(${index}, 'edi_institution_address_state', this.value)">
                             </div>
                         </div>
                         <div>
@@ -4275,6 +4267,7 @@ if ($pnr) {
         }
 
         function updateInstitutionData(index, field, value) {
+            console.log(index, field, value)
             const applicant = state.applicants[state.currentApplicant];
             if (!applicant.educationalInfo.institutions) {
                 applicant.educationalInfo.institutions = [];
