@@ -302,26 +302,20 @@ if ($pnr) {
         </footer>
     </div>
 
-    <script type="module">
-        try {
-            const response = await fetch('/server/countries.json');
-            const countries = await response.json();
-
-            console.log(countries);
-
-            const select = document.getElementById('country-select');
-            countries.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.code;
-                option.textContent = c.name;
-                select.appendChild(option);
-            });
-
-        } catch (error) {
-            console.error('Error loading countries:', error);
-        }
-    </script>
     <script>
+        let countries = []; // GLOBAL
+
+        fetch('/server/countries.json')
+            .then(r => r.json())
+            .then(countryList => {
+                countries = countryList; // GLOBAL ভেরিয়েবল আপডেট হচ্ছে
+                console.log("Countries loaded:", countries);
+
+                // এখন countries ready → যদি লোড হবার সাথে সাথে কিছু রান করতে চাও:
+                generateFormSteps();
+            })
+            .catch(err => console.error('Error:', err));
+
         // তারিখ validation ফাংশন
         function isValidDate(dateString) {
             // DD/MM/YYYY format validate
@@ -862,6 +856,12 @@ if ($pnr) {
                     return '<p>Step content not defined.</p>';
             }
         }
+
+        // Country data - will be replaced with JSON API data
+
+
+        console.log(countries);
+
 
         // Social media platforms
         const socialMediaPlatforms = [
