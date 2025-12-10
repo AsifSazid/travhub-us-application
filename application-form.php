@@ -302,6 +302,25 @@ if ($pnr) {
         </footer>
     </div>
 
+    <script type="module">
+        try {
+            const response = await fetch('/server/countries.json');
+            const countries = await response.json();
+
+            console.log(countries);
+
+            const select = document.getElementById('country-select');
+            countries.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.code;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error loading countries:', error);
+        }
+    </script>
     <script>
         // তারিখ validation ফাংশন
         function isValidDate(dateString) {
@@ -842,26 +861,6 @@ if ($pnr) {
                 default:
                     return '<p>Step content not defined.</p>';
             }
-        }
-
-        // Country data - will be replaced with JSON API data
-        try {
-            const response = await fetch('/server/countries.json');
-            const countries = await response.json();
-
-            console.log(countries); // এখানে এখন সব দেশের ডেটা পাবে
-
-            // Example: Dropdown এ দেখাতে চাইলে
-            const select = document.getElementById('country-select');
-            countries.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.code;
-                option.textContent = c.name;
-                select.appendChild(option);
-            });
-
-        } catch (error) {
-            console.error('Error loading countries:', error);
         }
 
         // Social media platforms
