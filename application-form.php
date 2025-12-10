@@ -845,39 +845,24 @@ if ($pnr) {
         }
 
         // Country data - will be replaced with JSON API data
-        const countries = [{
-                code: 'USA',
-                name: 'United States'
-            },
-            {
-                code: 'UK',
-                name: 'United Kingdom'
-            },
-            {
-                code: 'BD',
-                name: 'Bangladesh'
-            },
-            {
-                code: 'IN',
-                name: 'India'
-            },
-            {
-                code: 'CA',
-                name: 'Canada'
-            },
-            {
-                code: 'AU',
-                name: 'Australia'
-            },
-            {
-                code: 'DE',
-                name: 'Germany'
-            },
-            {
-                code: 'FR',
-                name: 'France'
-            }
-        ];
+        try {
+            const response = await fetch('/server/countries.json');
+            const countries = await response.json();
+
+            console.log(countries); // এখানে এখন সব দেশের ডেটা পাবে
+
+            // Example: Dropdown এ দেখাতে চাইলে
+            const select = document.getElementById('country-select');
+            countries.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.code;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error loading countries:', error);
+        }
 
         // Social media platforms
         const socialMediaPlatforms = [
@@ -2807,7 +2792,6 @@ if ($pnr) {
                 const showUSASection = member.in_usa;
                 const showSpouseSection = member.relation === 'Spouse';
                 const showSpouseAddress = member.have_same_address === 'Others';
-
                 return `
                 <div class="family-member-field border border-gray-300 rounded-lg p-6 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
